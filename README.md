@@ -5,6 +5,12 @@ This is another attempt to automate bit and pieces of workflow while managing a 
 
 As part of revamping it, this cli tool is taking a page from how Kubernetes does things. Have settings be declared and the binary will somehow make it happen. (We're not building it on k8s - there is no need to have scale etc for this)
 
+# Building the CLI
+
+```bash
+go build -o techmeetup ./cmd
+```
+
 # Planned Features
 
 - GDG Cloud Singapore Utility
