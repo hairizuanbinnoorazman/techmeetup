@@ -40,6 +40,7 @@ This utility extracts all text items from Google Slides to be appended into a si
 file for further configuration. There are a few things to note though if you're using this.
 1. The whole textbox is the URL
 2. URL is complete (contains schema etc - http or https exists at the front of it)
+3. There is only one of such url in each page on the slide
 
 Further improvements can be added to this tool in the future`,
 			Args: cobra.ExactArgs(1),
