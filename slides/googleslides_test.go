@@ -63,3 +63,55 @@ func TestGoogleSlides_GetAllText(t *testing.T) {
 		})
 	}
 }
+
+func TestGoogleSlides_UpdateText(t *testing.T) {
+	type fields struct {
+		logger       logger.Logger
+		slideService *slides.Service
+	}
+	type args struct {
+		ctx                context.Context
+		slidesID           string
+		textReplaceRequest []TextOnSlide
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Successful case",
+			fields: fields{
+				logger:       logger.LoggerForTests{Tester: t},
+				slideService: slidesClientHelper(),
+			},
+			args: args{
+				ctx:      context.TODO(),
+				slidesID: "1A8tyh0MoV4BvWvEJLS3DgtdBWiZGF-fWehMehUqFCvQ",
+				textReplaceRequest: []TextOnSlide{
+					TextOnSlide{
+						SlidePageID: "g93d1feb535_0_0",
+						Text:        "https://www.google.com",
+					},
+					TextOnSlide{
+						SlidePageID: "g952a3c9ea9_0_0",
+						Text:        "https://www.google.com",
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &GoogleSlides{
+				logger:       tt.fields.logger,
+				slideService: tt.fields.slideService,
+			}
+			if err := g.UpdateText(tt.args.ctx, tt.args.slidesID, tt.args.textReplaceRequest); (err != nil) != tt.wantErr {
+				t.Errorf("GoogleSlides.UpdateText() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

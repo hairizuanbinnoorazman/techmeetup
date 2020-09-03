@@ -68,3 +68,27 @@ func (g *GoogleSlides) GetAllText(ctx context.Context, slidesID string) ([]TextO
 	}
 	return gatheredList, nil
 }
+
+func (g *GoogleSlides) UpdateText(ctx context.Context, slidesID string, textReplaceRequest []TextOnSlide) error {
+	var reqs []*slides.Request
+	for _, item := range textReplaceRequest {
+		reqs = append(reqs,
+			&slides.Request{
+				ReplaceAllText: &slides.ReplaceAllTextRequest{
+					ReplaceText:   "https://lollol.com",
+					PageObjectIds: []string{item.SlidePageID},
+					ContainsText: &slides.SubstringMatchCriteria{
+						MatchCase: true,
+						Text:      item.Text,
+					},
+				},
+			})
+	}
+	updateReq := g.slideService.Presentations.BatchUpdate(slidesID, &slides.BatchUpdatePresentationRequest{Requests: reqs})
+	updateReq = updateReq.Context(ctx)
+	_, err := updateReq.Do()
+	if err != nil {
+		return fmt.Errorf("Update Request failed. Err: %v", err)
+	}
+	return nil
+}
