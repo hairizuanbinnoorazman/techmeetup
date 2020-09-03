@@ -95,19 +95,7 @@ Further improvements can be added to this tool in the future`,
 // Configuration for linkfetcher specifically
 // We are right now restricting this to only work with Google Slides (Generalizing this would come later)
 type linkReplacerConfig struct {
-	// Only one provider at the moment: bitly
-	URLShortenerProvider string `yaml:"url_shortener_provider"`
-	// Prefix adds to the front of the path
-	// E.g. prefix = gdg-10, path = microservices, final_result = gdg-10-microservices
-	// Will only be used if shortened path has a value, else, a randomized value provided by t
-	// the shortener service will be provided
-	Prefix string                 `yaml:"prefix"`
-	Items  []linkReplaceSlideItem `yaml:"items"`
-}
-
-type linkReplaceSlideItem struct {
-	SlidePageID string `yaml:"slide_page_id"`
-	URL         string `yaml:"url"`
-	// If this is empty, we would rely on shortener provider to provide a random endpoint
-	ShortenedPath string `yaml:"shortened_path"`
+	// Provider secret token
+	AccessToken string                `yaml:"access_token"`
+	Items       []tslides.TextOnSlide `yaml:"items"`
 }
