@@ -5,17 +5,24 @@ This is another attempt to automate bit and pieces of workflow while managing a 
 
 As part of revamping it, this cli tool is taking a page from how Kubernetes does things. Have settings be declared and the binary will somehow make it happen. (We're not building it on k8s - there is no need to have scale etc for this)
 
+# Usage of tool
+
+There would little to no documentation for this tool. Most of the documentation will be part of the cli - this would make it easier to understand what it is probably doing as well
+
 # Building the CLI
 
 ```bash
 go build -o techmeetup ./cmd
 ```
 
-# Planned Features
+# Completed Features
 
 - GDG Cloud Singapore Utility
   - bitly link creation - connect to Googleslides and retrieve all http link looking things and grab it to a yaml/json file
   - Allow user to replace it in one swoop (User to pass in a yaml/json file that would alter the links accordingly)
+
+# Planned Features
+
 - GDG Cloud Singapore meetup management
   - Handle calendar invites
     - Read calendar invites for event
