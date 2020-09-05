@@ -65,7 +65,7 @@ func (b *Bitly) GenerateLink(ctx context.Context, url string) (shortenedLink str
 	if err != nil {
 		return "", fmt.Errorf("Unable to parse request body")
 	}
-	if resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("Unexpected status code. StatusCode: %v Response: %v", resp.StatusCode, string(respRaw))
 	}
 
