@@ -24,6 +24,9 @@ go build -o techmeetup ./cmd
 # Planned Features
 
 - GDG Cloud Singapore meetup management
+  - Create the biweekly meetup slides
+    - Read and maintain state of what has already been created
+    - Alter the slides accordingly based on new information
   - Handle calendar invites
     - Read calendar invites for event
     - Write calendar invites for events
