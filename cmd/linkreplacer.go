@@ -4,7 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
+	"time"
+
+	"github.com/hairizuanbinnoorazman/techmeetup/urlshortener"
 
 	"gopkg.in/yaml.v2"
 
@@ -78,24 +83,80 @@ Further improvements can be added to this tool in the future`,
 	applyLinksCmd = func() *cobra.Command {
 		var authFile string
 		var configFile string
+		var dryMode bool
+		var accessToken string
 		applylinkscmd := &cobra.Command{
 			Use:   "apply [Google Slide ID]",
 			Short: "Apply the configuration to make the required changes to the links",
 			Long:  ``,
+			Args: func(cmd *cobra.Command, args []string) error {
+				if len(args) != 1 {
+					return fmt.Errorf("Expected Google Slide ID here")
+				}
+				if dryMode == false {
+					if accessToken == "" {
+						return fmt.Errorf("bitly access token is missing. Add the --access-token <Bitly token> flag ")
+					}
+				}
+				return nil
+			},
 			Run: func(cmd *cobra.Command, args []string) {
-				cmd.Help()
+				presentationSlideID := args[0]
+				raw, err := ioutil.ReadFile(configFile)
+				if err != nil {
+					fmt.Printf("Unable to read config file. Err: %v", err)
+					os.Exit(1)
+				}
+				var links []tslides.TextOnSlideReplacer
+				yaml.Unmarshal(raw, &links)
+				var cleanedLinks []tslides.TextOnSlideReplacer
+				for _, val := range links {
+					if strings.Contains(val.Text, "bit.ly") || strings.Contains(val.Text, "bitly") {
+						continue
+					}
+					cleanedLinks = append(cleanedLinks, val)
+				}
+				if dryMode {
+					cleanedRaw, _ := yaml.Marshal(cleanedLinks)
+					fmt.Println(string(cleanedRaw))
+					os.Exit(0)
+				}
+				credJSON, err := ioutil.ReadFile(authFile)
+				if err != nil {
+					logrus.Errorf("Unable to read auth file. We will not proceed. Err: %v", err)
+					os.Exit(1)
+				}
+				slideService, err := slides.NewService(context.Background(), option.WithCredentialsJSON(credJSON))
+				if err != nil {
+					logrus.Errorf("Unable to create slides service. We will not proceed. Err: %v", err)
+					os.Exit(1)
+				}
+				gslides := tslides.NewGoogleSlides(logrus.StandardLogger(), slideService)
+				bitlyClient := urlshortener.NewBitly(logrus.New(), http.DefaultClient, accessToken)
+				for idx, val := range cleanedLinks {
+					if val.ReplaceText != "" {
+						continue
+					}
+					replaceURL, err := bitlyClient.GenerateLink(context.TODO(), val.Text)
+					if err != nil {
+						fmt.Printf("Early termination - error in generating new url. Please review. Err: %v\n", err)
+						os.Exit(1)
+					}
+					cleanedLinks[idx].ReplaceText = replaceURL
+					time.Sleep(1 * time.Second)
+				}
+				logrus.Infof("\nPrinting data to be applied:\n%+v\n", cleanedLinks)
+				err = gslides.UpdateText(context.TODO(), presentationSlideID, cleanedLinks)
+				if err != nil {
+					fmt.Printf("Error in updating text on google slides. Err: %v", err)
+					os.Exit(1)
+				}
 			},
 		}
 		applylinkscmd.Flags().StringVar(&authFile, "authfile", "auth.json", "Authentication json needed for some platforms")
 		applylinkscmd.Flags().StringVar(&configFile, "config", "config.yaml", "Configuration file. Please utilize the fetcher to ensure the right format of config is used")
+		applylinkscmd.Flags().StringVar(&accessToken, "access-token", "", "Access token for bit.ly")
+		applylinkscmd.Flags().BoolVar(&dryMode, "drymode", false, "Runs through some filters and returns a yaml that contains actual links that would be replaced")
 		return applylinkscmd
 	}
 )
-
-// Configuration for linkfetcher specifically
-// We are right now restricting this to only work with Google Slides (Generalizing this would come later)
-type linkReplacerConfig struct {
-	// Provider secret token
-	AccessToken string                `yaml:"access_token"`
-	Items       []tslides.TextOnSlide `yaml:"items"`
-}
