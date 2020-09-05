@@ -15,6 +15,7 @@ type Bitly struct {
 	logger      logger.Logger
 	client      *http.Client
 	accessToken string
+	groupUID    string
 }
 
 func NewBitly(logger logger.Logger, client *http.Client, accessToken string) Bitly {
@@ -35,6 +36,9 @@ type bitlyResource struct {
 	Tags           []string `json:"tags"`
 }
 
+// GenerateLink - Special case with bitly - bitly apparently will return the same shortened link
+// if the same long url is provided to it - hence, there is less of a need to check that this
+// is expected.
 func (b *Bitly) GenerateLink(ctx context.Context, url string) (shortenedLink string, err error) {
 	type bitlyReq struct {
 		Title   string `json:"title"`
