@@ -24,6 +24,10 @@ go build -o techmeetup ./cmd
 # Planned Features
 
 - GDG Cloud Singapore meetup management
+  - NOTE: For all the below mentioned features:
+    - Features should have an end sync date of sorts (Make sure that slides don't update an most critical moment)
+    - Allow user to hit an endpoint to force update right now
+  - Backup of settings
   - Create the biweekly meetup slides
     - Read and maintain state of what has already been created
     - Alter the slides accordingly based on new information
