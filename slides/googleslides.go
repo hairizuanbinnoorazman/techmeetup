@@ -69,13 +69,19 @@ func (g *GoogleSlides) GetAllText(ctx context.Context, slidesID string) ([]TextO
 	return gatheredList, nil
 }
 
-func (g *GoogleSlides) UpdateText(ctx context.Context, slidesID string, textReplaceRequest []TextOnSlide) error {
+type TextOnSlideReplacer struct {
+	SlidePageID string `yaml:"slide_page_id"`
+	Text        string `yaml:"text"`
+	ReplaceText string `yaml:"replace_text"`
+}
+
+func (g *GoogleSlides) UpdateText(ctx context.Context, slidesID string, textReplaceRequest []TextOnSlideReplacer) error {
 	var reqs []*slides.Request
 	for _, item := range textReplaceRequest {
 		reqs = append(reqs,
 			&slides.Request{
 				ReplaceAllText: &slides.ReplaceAllTextRequest{
-					ReplaceText:   "https://lollol.com",
+					ReplaceText:   item.ReplaceText,
 					PageObjectIds: []string{item.SlidePageID},
 					ContainsText: &slides.SubstringMatchCriteria{
 						MatchCase: true,
