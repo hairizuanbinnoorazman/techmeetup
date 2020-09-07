@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/hairizuanbinnoorazman/techmeetup/logger"
 )
@@ -57,6 +58,7 @@ func (m MeetupAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	type authAccessResp struct {
 		AccessToken   string `json:"access_token"`
 		RefereshToken string `json:"refresh_token"`
+		ExpiresIn     int64  `json:"expires_in"`
 	}
 	rawAuthAccessResp, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -72,6 +74,7 @@ func (m MeetupAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = m.authStore.StoreMeetupToken(MeetupToken{
 		RefreshToken: a.RefereshToken,
 		AccessToken:  a.AccessToken,
+		ExpiryTime:   time.Now().Unix() + a.ExpiresIn,
 	})
 	if err != nil {
 		m.logger.Errorf("Failed to write to file but managed to get credentials. Will print it out for now")

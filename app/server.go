@@ -16,15 +16,35 @@ func server(c Config, a AuthStore, notifyConfigChange chan bool) {
 		redirectURI: c.Meetup.RedirectURI,
 	}
 	meetupAccess := MeetupAccess{
-		client:       http.DefaultClient,
-		logger:       logrus.New(),
-		authStore:    a,
-		clientID:     c.Meetup.ClientID,
-		clientSecret: c.Meetup.ClientSecret,
-		redirectURI:  c.Meetup.RedirectURI,
+		client:             http.DefaultClient,
+		logger:             logrus.New(),
+		authStore:          a,
+		clientID:           c.Meetup.ClientID,
+		clientSecret:       c.Meetup.ClientSecret,
+		redirectURI:        c.Meetup.RedirectURI,
+		notifyConfigChange: notifyConfigChange,
 	}
+	googleAuthorize := GoogleAuthorize{
+		client:      http.DefaultClient,
+		logger:      logrus.New(),
+		clientID:    c.Google.ClientID,
+		redirectURI: c.Google.RedirectURI,
+		scope:       c.Google.Scope,
+	}
+	googleAccess := GoogleAccess{
+		client:             http.DefaultClient,
+		logger:             logrus.New(),
+		authStore:          a,
+		clientID:           c.Google.ClientID,
+		clientSecret:       c.Google.ClientSecret,
+		redirectURI:        c.Google.RedirectURI,
+		notifyConfigChange: notifyConfigChange,
+	}
+
 	http.Handle("/auth/meetup/authorize", meetupAuthorize)
 	http.Handle("/auth/meetup/access", meetupAccess)
+	http.Handle("/auth/google/authorize", googleAuthorize)
+	http.Handle("/auth/google/access", googleAccess)
 	http.Handle("/", index{})
 	log.Fatal(http.ListenAndServe(":9000", nil))
 }

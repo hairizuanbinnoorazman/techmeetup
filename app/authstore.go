@@ -16,11 +16,13 @@ type AuthStore interface {
 type MeetupToken struct {
 	RefreshToken string `yaml:"refresh_token"`
 	AccessToken  string `yaml:"access_token"`
+	ExpiryTime   int64  `yaml:"expiry_time"`
 }
 
 type GoogleToken struct {
 	RefreshToken string `yaml:"refresh_token"`
 	AccessToken  string `yaml:"access_token"`
+	ExpiryTime   int64  `yaml:"expiry_time"`
 }
 
 type BasicAuthStore struct {

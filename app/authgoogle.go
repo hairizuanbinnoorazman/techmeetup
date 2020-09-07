@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/hairizuanbinnoorazman/techmeetup/logger"
 )
@@ -30,11 +31,13 @@ func (g GoogleAuthorize) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type GoogleAccess struct {
-	client       *http.Client
-	logger       logger.Logger
-	clientID     string
-	clientSecret string
-	redirectURI  string
+	client             *http.Client
+	logger             logger.Logger
+	authStore          AuthStore
+	clientID           string
+	clientSecret       string
+	redirectURI        string
+	notifyConfigChange chan bool
 }
 
 func (g GoogleAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +46,7 @@ func (g GoogleAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	accessURL, _ := url.ParseRequestURI("https://secure.meetup.com/oauth2/access")
+	accessURL, _ := url.ParseRequestURI("oauth2.googleapis.com")
 	accessReqBody := url.Values{}
 	accessReqBody["code"] = []string{code}
 	accessReqBody["client_id"] = []string{g.clientID}
@@ -58,6 +61,7 @@ func (g GoogleAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	type authAccessResp struct {
 		AccessToken   string `json:"access_token"`
 		RefereshToken string `json:"refresh_token"`
+		ExpiresIn     int64  `json:"expires_in"`
 	}
 	rawAuthAccessResp, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -70,5 +74,17 @@ func (g GoogleAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	g.logger.Infof("Response: %v", a)
+	err = g.authStore.StoreMeetupToken(MeetupToken{
+		RefreshToken: a.RefereshToken,
+		AccessToken:  a.AccessToken,
+		ExpiryTime:   time.Now().Unix() + a.ExpiresIn,
+	})
+	if err != nil {
+		g.logger.Errorf("Failed to write to file but managed to get credentials. Will print it out for now")
+		g.logger.Errorf("%+v", a)
+	}
+	defer func() {
+		g.notifyConfigChange <- true
+	}()
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }

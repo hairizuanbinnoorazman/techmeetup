@@ -58,5 +58,6 @@ type MeetupCredentials struct {
 type GoogleCredentials struct {
 	ClientID     string `yaml:"client_id"`
 	ClientSecret string `yaml:"client_secret"`
+	Scope        string `yaml:"scope"`
 	RedirectURI  string `yaml:"redirect_uri"`
 }
