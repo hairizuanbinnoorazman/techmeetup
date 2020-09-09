@@ -50,7 +50,7 @@ func (g *GoogleSlides) GetAllText(ctx context.Context, slidesID string) ([]TextO
 	gatheredList := []TextOnSlide{}
 	for _, s := range slides.Slides {
 		for _, t := range s.PageElements {
-			if t.Shape == nil {
+			if t.Shape == nil || t.Shape.Text == nil || t.Shape.Text.TextElements == nil {
 				continue
 			}
 			if t.Shape.ShapeType == "TEXT_BOX" {
