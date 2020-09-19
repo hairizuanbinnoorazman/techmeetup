@@ -14,6 +14,7 @@ func (i index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	<h1>Authentication</h1></br>
 	<p>This section is to provide a convenient way to do authentication without requiring to fiddle with endpoints</p></br>
 	<a href="/auth/meetup/authorize">Meetup Authentication</a></br>
+	<a href="/auth/google/authorize">Google Authentication</a></br>
 </body>	
 `)
 	tmpl.Execute(w, nil)

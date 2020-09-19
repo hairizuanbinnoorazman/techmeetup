@@ -2,6 +2,7 @@
 package app
 
 import (
+	"net/http"
 	"os"
 	"time"
 
@@ -13,10 +14,13 @@ type App struct {
 	configStore ConfigStore
 	logger      logger.Logger
 	// Internal controls
-	authStore       AuthStore
-	config          Config
-	eventMgr        eventmgmt.EventMgmt
-	eventMgmtTicker *time.Ticker
+	authStore           AuthStore
+	config              Config
+	eventMgr            eventmgmt.EventMgmt
+	googleAuth          GoogleAuthRefresher
+	meetupAuth          MeetupAuthRefresher
+	eventMgmtTicker     *time.Ticker
+	authRefresherTicker *time.Ticker
 }
 
 func NewApp(c ConfigStore, l logger.Logger) App {
@@ -33,10 +37,24 @@ func (a *App) Initialize() {
 	a.config, _ = a.configStore.Get()
 	authstore := NewBasicAuthStore(a.config.Authstore)
 	a.authStore = &authstore
-	if a.config.Features.MeetupSync.Enabled {
-		a.eventMgmtTicker = time.NewTicker(time.Duration(a.config.Features.MeetupSync.IdleDuration) * time.Second)
-	} else {
-		a.eventMgmtTicker = nil
+	a.eventMgmtTicker = time.NewTicker(time.Duration(a.config.Features.MeetupSync.IdleDuration) * time.Second)
+	if !a.config.Features.MeetupSync.Enabled {
+		a.eventMgmtTicker.Stop()
+	}
+	a.authRefresherTicker = time.NewTicker(300 * time.Second)
+	a.googleAuth = GoogleAuthRefresher{
+		client:       http.DefaultClient,
+		logger:       a.logger,
+		authStore:    &authstore,
+		clientID:     a.config.Google.ClientID,
+		clientSecret: a.config.Google.ClientSecret,
+	}
+	a.meetupAuth = MeetupAuthRefresher{
+		client:       http.DefaultClient,
+		logger:       a.logger,
+		authStore:    &authstore,
+		clientID:     a.config.Meetup.ClientID,
+		clientSecret: a.config.Meetup.ClientSecret,
 	}
 }
 
@@ -57,6 +75,16 @@ func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
 		case <-a.eventMgmtTicker.C:
 			a.logger.Info("Begin event syncing")
 			time.Sleep(1 * time.Second)
+		case <-a.authRefresherTicker.C:
+			err := a.googleAuth.Refresh()
+			if err != nil {
+				a.logger.Errorf("Unable to refresh Google Access Tokens. Err: %v", err)
+			}
+			err = a.meetupAuth.Refresh()
+			if err != nil {
+				a.logger.Errorf("Unable to refresh Meetup Access Tokens. Err: %v", err)
+			}
+			a.Initialize()
 		}
 	}
 }
