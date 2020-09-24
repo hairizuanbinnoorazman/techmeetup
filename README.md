@@ -25,11 +25,13 @@ go build -o techmeetup ./cmd
 # In progress features
 
 - Handle calendar invites
-  - Read calendar invites for event
-  - Write calendar invites for events
+  - Read calendar invites for event -> don't need to "list", we'll track each event
+  - Create calendar invites for events -> Done, require integratin
+  - Update calendar invites for events
 - To update streamyard
-  - Read events from streamyard
-  - Write/update events into streamyard
+  - Read events from streamyard - Done, require integration
+  - Create event in streamyard - Done but need to consider facebook destination
+  - Update event in streamyard
 
 # Planned Features
 
