@@ -1,4 +1,5 @@
 # techmeetup
+
 A CLI tool that provides various utility capabilities for automating aspects of tech meetup groups
 
 This is another attempt to automate bit and pieces of workflow while managing a tech meetup group. Unfortunately, pass efforts are done up in python, making it slightly difficult to distribute. At the same time, due to the imperative nature of the scripts - scripts only create resources on destination platforms without checking; onus on the person who is running the script. This made it quite difficult to run it
@@ -21,6 +22,15 @@ go build -o techmeetup ./cmd
   - bitly link creation - connect to Googleslides and retrieve all http link looking things and grab it to a yaml/json file
   - Allow user to replace it in one swoop (User to pass in a yaml/json file that would alter the links accordingly)
 
+# In progress features
+
+- Handle calendar invites
+  - Read calendar invites for event
+  - Write calendar invites for events
+- To update streamyard
+  - Read events from streamyard
+  - Write/update events into streamyard
+
 # Planned Features
 
 - GDG Cloud Singapore meetup management
@@ -31,18 +41,12 @@ go build -o techmeetup ./cmd
   - Create the biweekly meetup slides
     - Read and maintain state of what has already been created
     - Alter the slides accordingly based on new information
-  - Handle calendar invites
-    - Read calendar invites for event
-    - Write calendar invites for events
   - Update googlesheets (To have a update of sorts to other members)
     - Read events from googlesheets
     - Write events to googlesheets
   - To update meetup.com
     - Read events from meetup.com
     - Write events into meetup.com
-  - To update streamyard
-    - Read events from streamyard
-    - Write/update events into streamyard
   - To update website
     - Read events from meetup.com
     - Write events into github.com
@@ -63,4 +67,3 @@ go build -o techmeetup ./cmd
   - Facebook Group Album
   - Facebook Page Album
   - Meetup.com
-
