@@ -86,13 +86,14 @@ func TestGoogleCalendar_CreateEvent(t *testing.T) {
 				ctx:        context.TODO(),
 				calendarID: configHelper("id"),
 				c: CalendarEvent{
-					StartTime: timeHelper("2020-09-24T19:00:00"),
-					EndTime:   timeHelper("2020-09-24T20:00:00"),
+					StartTime: timeHelper("2020-09-27T19:00:00"),
+					EndTime:   timeHelper("2020-09-27T20:00:00"),
 					Title:     "Test this stuff",
 					Description: `This is another test
 This is another test
 
 This is another test`,
+					Attendees: []string{},
 				},
 			},
 		},

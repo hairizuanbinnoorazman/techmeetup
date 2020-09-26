@@ -16,6 +16,7 @@ type CalendarEvent struct {
 	Title       string
 	Description string
 	Duration    float64
+	Attendees   []string
 }
 
 type GoogleCalendar struct {
@@ -45,6 +46,10 @@ func (g *GoogleCalendar) GetEvent(ctx context.Context, calendarID, eventID strin
 	if err != nil {
 		return CalendarEvent{}, fmt.Errorf("Unable to parse start time of calendar event. Err: %v", err)
 	}
+	attendees := []string{}
+	for _, z := range resp.Attendees {
+		attendees = append(attendees, z.Email)
+	}
 	duration := endTime.Sub(startTime)
 	return CalendarEvent{
 		ID:          resp.Id,
@@ -53,6 +58,7 @@ func (g *GoogleCalendar) GetEvent(ctx context.Context, calendarID, eventID strin
 		Title:       resp.Summary,
 		Description: resp.Description,
 		Duration:    duration.Minutes(),
+		Attendees:   attendees,
 	}, nil
 }
 
@@ -60,6 +66,13 @@ func (g *GoogleCalendar) CreateEvent(ctx context.Context, calendarID string, c C
 	if c.StartTime.IsZero() || c.EndTime.IsZero() || c.Title == "" || c.Description == "" {
 		return CalendarEvent{}, fmt.Errorf("Issue with input calendar event")
 	}
+	var attendees []*calendar.EventAttendee
+	for _, z := range c.Attendees {
+		attendees = append(attendees, &calendar.EventAttendee{
+			Email: z,
+		})
+	}
+
 	e := calendar.Event{
 		Summary:     c.Title,
 		Description: c.Description,
@@ -71,8 +84,8 @@ func (g *GoogleCalendar) CreateEvent(ctx context.Context, calendarID string, c C
 			DateTime: c.EndTime.Format("2006-01-02T15:04:05Z07:00"),
 			TimeZone: "Asia/Singapore",
 		},
+		Attendees: attendees,
 	}
-	g.logger.Infof("%+v", e)
 	eventCreateReq := g.calendarSvc.Events.Insert(calendarID, &e)
 	eventCreateReq = eventCreateReq.Context(ctx)
 	resp, err := eventCreateReq.Do()
@@ -87,6 +100,13 @@ func (g *GoogleCalendar) UpdateEvent(ctx context.Context, calendarID string, c C
 	if c.StartTime.IsZero() || c.EndTime.IsZero() || c.Title == "" || c.Description == "" {
 		return CalendarEvent{}, fmt.Errorf("Issue with input calendar event")
 	}
+	var attendees []*calendar.EventAttendee
+	for _, z := range c.Attendees {
+		attendees = append(attendees, &calendar.EventAttendee{
+			Email: z,
+		})
+	}
+
 	e := calendar.Event{
 		Summary:     c.Title,
 		Description: c.Description,
@@ -98,8 +118,8 @@ func (g *GoogleCalendar) UpdateEvent(ctx context.Context, calendarID string, c C
 			DateTime: c.EndTime.Format("2006-01-02T15:04:05Z07:00"),
 			TimeZone: "Asia/Singapore",
 		},
+		Attendees: attendees,
 	}
-	g.logger.Infof("%+v", e)
 	eventCreateReq := g.calendarSvc.Events.Update(calendarID, c.ID, &e)
 	eventCreateReq = eventCreateReq.Context(ctx)
 	resp, err := eventCreateReq.Do()
