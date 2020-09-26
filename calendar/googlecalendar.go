@@ -122,6 +122,7 @@ func (g *GoogleCalendar) UpdateEvent(ctx context.Context, calendarID string, c C
 	}
 	eventCreateReq := g.calendarSvc.Events.Update(calendarID, c.ID, &e)
 	eventCreateReq = eventCreateReq.Context(ctx)
+	eventCreateReq = eventCreateReq.SendUpdates("none")
 	resp, err := eventCreateReq.Do()
 	if err != nil {
 		return CalendarEvent{}, fmt.Errorf("Unable to create event. Err: %v", err)
