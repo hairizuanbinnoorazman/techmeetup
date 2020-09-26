@@ -24,18 +24,23 @@ go build -o techmeetup ./cmd
 
 # In progress features
 
-- Handle calendar invites
-  - Read calendar invites for event -> don't need to "list", we'll track each event
-  - Create calendar invites for events -> Done, require integratin
+- Handle calendar invites -> need to consider speakers/organizers
+  - Read calendar invites for event
+  - Create calendar invites for events
   - Update calendar invites for events
 - To update streamyard
   - Read events from streamyard - Done, require integration
   - Create event in streamyard - Done but need to consider facebook destination
   - Update event in streamyard
+- To update meetup.com
+  - Read events from meetup.com - Done, require integration
+  - Create events into meetup.com
+  - Update events into meetup.com
 
 # Planned Features
 
 - GDG Cloud Singapore meetup management
+
   - NOTE: For all the below mentioned features:
     - Features should have an end sync date of sorts (Make sure that slides don't update an most critical moment)
     - Allow user to hit an endpoint to force update right now
@@ -46,9 +51,6 @@ go build -o techmeetup ./cmd
   - Update googlesheets (To have a update of sorts to other members)
     - Read events from googlesheets
     - Write events to googlesheets
-  - To update meetup.com
-    - Read events from meetup.com
-    - Write events into meetup.com
   - To update website
     - Read events from meetup.com
     - Write events into github.com
@@ -64,6 +66,7 @@ go build -o techmeetup ./cmd
   - To linkedin
     - Read posts from page
     - Write posts into page
+
 - Sync assets between the following sources/destinations
   - Google Photo Album
   - Facebook Group Album
