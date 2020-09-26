@@ -20,11 +20,12 @@ type MeetupAuthorize struct {
 func (m MeetupAuthorize) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	authorizeURL, _ := url.ParseRequestURI("https://secure.meetup.com/oauth2/authorize")
 	query := authorizeURL.Query()
+	query.Add("scope", "event_management")
 	query.Add("client_id", m.clientID)
 	query.Add("response_type", "code")
 	query.Add("redirect_uri", m.redirectURI)
 	authorizeURL.RawQuery = query.Encode()
-	http.Redirect(w, r, authorizeURL.String(), http.StatusPermanentRedirect)
+	http.Redirect(w, r, authorizeURL.String(), http.StatusTemporaryRedirect)
 }
 
 type MeetupAuthRefresher struct {
