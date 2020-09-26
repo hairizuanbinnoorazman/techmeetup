@@ -58,6 +58,7 @@ type FeatureControl struct {
 
 type MeetupFeatureControl struct {
 	Enabled      bool                    `yaml:"enabled"`
+	DryRunMode   bool                    `yaml:"dryrun_mode"`
 	IdleDuration int                     `yaml:"idle_duration"`
 	SubFeatures  SubMeetupFeatureControl `yaml:"subfeatures"`
 }
