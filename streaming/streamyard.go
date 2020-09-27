@@ -9,7 +9,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
-	"net/http/httputil"
 	"net/textproto"
 	"net/url"
 	"path/filepath"
@@ -21,13 +20,21 @@ import (
 )
 
 type Stream struct {
+	ID           string
 	StartDate    time.Time
 	Name         string
 	Description  string
 	ImagePath    string
 	YoutubeLink  string
-	StreamyardID string
 	IsPublic     bool
+	Destinations []Destination
+}
+
+type Destination struct {
+	ID string
+	// Type is youtube or facebook
+	Type string
+	Link string
 }
 
 type Streamyard struct {
@@ -115,13 +122,13 @@ func (s Streamyard) CreateStream(ctx context.Context, title string) (Stream, err
 	return Stream{}, nil
 }
 
-func (s Streamyard) UpdateStream(ctx context.Context, ss Stream) (Stream, error) {
+func (s Streamyard) CreateDestination(ctx context.Context, destinationStreamType string, ss Stream) (Stream, error) {
 	err := s.jwtChecker()
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
 
-	initialURL := fmt.Sprintf("https://streamyard.com/api/broadcasts/%v/outputs", ss.StreamyardID)
+	initialURL := fmt.Sprintf("https://streamyard.com/api/broadcasts/%v/outputs", ss.ID)
 	finalURL, _ := url.ParseRequestURI(initialURL)
 
 	cj := s.createCookiejar(finalURL)
@@ -163,8 +170,16 @@ func (s Streamyard) UpdateStream(ctx context.Context, ss Stream) (Stream, error)
 
 	part, _ = writer.CreateFormField("plannedStartTime")
 	part.Write([]byte(streamyardCompatibleTimeFormat(ss.StartDate)))
-	part, _ = writer.CreateFormField("destinationId")
-	part.Write([]byte(s.youtubeDestination))
+	if destinationStreamType == "youtube" {
+		part, _ = writer.CreateFormField("destinationId")
+		part.Write([]byte(s.youtubeDestination))
+	} else if destinationStreamType == "facebook" {
+		part, _ = writer.CreateFormField("destinationId")
+		part.Write([]byte(s.facebookDestination))
+	} else {
+		return Stream{}, fmt.Errorf("Bad destination location")
+	}
+
 	part, _ = writer.CreateFormField("csrfToken")
 	part.Write([]byte(s.csrfToken))
 
@@ -174,8 +189,65 @@ func (s Streamyard) UpdateStream(ctx context.Context, ss Stream) (Stream, error)
 	req.Header.Add("content-type", writer.FormDataContentType())
 	req.Header.Add("origin", "https://streamyard.com")
 	req.Header.Add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36")
-	lol, _ := httputil.DumpRequest(req, true)
-	s.logger.Info(string(lol))
+	resp, err := s.client.Do(req)
+	raw, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return Stream{}, err
+	}
+	s.logger.Info(string(raw))
+	return Stream{}, nil
+}
+
+func (s Streamyard) UpdateDestination(ctx context.Context, ss Stream, destinationID string) (Stream, error) {
+	err := s.jwtChecker()
+	if err != nil {
+		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
+	}
+
+	initialURL := fmt.Sprintf("https://streamyard.com/api/broadcasts/%v/outputs/%v", ss.ID, destinationID)
+	finalURL, _ := url.ParseRequestURI(initialURL)
+
+	cj := s.createCookiejar(finalURL)
+	s.client.Jar = cj
+
+	rawImage, err := ioutil.ReadFile(ss.ImagePath)
+	if err != nil {
+		return Stream{}, fmt.Errorf("Unable to load image file. Please check path to ensure correct. Err: %v", err)
+	}
+
+	imageContentType, err := imageTypeDetector(ss.ImagePath)
+	if err != nil {
+		return Stream{}, fmt.Errorf("Unexpected Image Type found. Please review file type. Err: %v", err)
+	}
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormField("title")
+	part.Write([]byte(ss.Name))
+	part, _ = writer.CreateFormField("description")
+	part.Write([]byte(ss.Description))
+
+	// Special code to cope with custom type
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition",
+		fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+			"image", "blob"))
+	h.Set("Content-Type", imageContentType)
+	part, _ = writer.CreatePart(h)
+	part.Write(rawImage)
+	// Special code to cope with custom type
+
+	part, _ = writer.CreateFormField("plannedStartTime")
+	part.Write([]byte(streamyardCompatibleTimeFormat(ss.StartDate)))
+	part, _ = writer.CreateFormField("csrfToken")
+	part.Write([]byte(s.csrfToken))
+
+	writer.Close()
+
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, finalURL.String(), body)
+	req.Header.Add("content-type", writer.FormDataContentType())
+	req.Header.Add("origin", "https://streamyard.com")
+	req.Header.Add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36")
 	resp, err := s.client.Do(req)
 	raw, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
