@@ -2,12 +2,18 @@
 package app
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"time"
 
+	calendarZ "github.com/hairizuanbinnoorazman/techmeetup/calendar"
 	"github.com/hairizuanbinnoorazman/techmeetup/eventmgmt"
+	"github.com/hairizuanbinnoorazman/techmeetup/eventstore"
 	"github.com/hairizuanbinnoorazman/techmeetup/logger"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/calendar/v3"
+	"google.golang.org/api/option"
 )
 
 type App struct {
@@ -21,6 +27,7 @@ type App struct {
 	meetupAuth          MeetupAuthRefresher
 	eventMgmtTicker     *time.Ticker
 	authRefresherTicker *time.Ticker
+	calendarSvc         calendarZ.GoogleCalendar
 }
 
 func NewApp(c ConfigStore, l logger.Logger) App {
@@ -41,7 +48,7 @@ func (a *App) Initialize() {
 	if !a.config.Features.MeetupSync.Enabled {
 		a.eventMgmtTicker.Stop()
 	}
-	a.authRefresherTicker = time.NewTicker(300 * time.Second)
+	a.authRefresherTicker = time.NewTicker(60 * time.Second)
 	a.googleAuth = GoogleAuthRefresher{
 		client:       http.DefaultClient,
 		logger:       a.logger,
@@ -56,6 +63,15 @@ func (a *App) Initialize() {
 		clientID:     a.config.Meetup.ClientID,
 		clientSecret: a.config.Meetup.ClientSecret,
 	}
+
+	m, _ := authstore.GetGoogleToken()
+	token := oauth2.Token{
+		AccessToken: m.AccessToken,
+		TokenType:   "Bearer",
+	}
+	client := oauth2.NewClient(context.TODO(), oauth2.StaticTokenSource(&token))
+	aa, _ := calendar.NewService(context.TODO(), option.WithHTTPClient(client))
+	a.calendarSvc = calendarZ.NewGoogleCalendar(aa, a.logger)
 }
 
 func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
@@ -74,8 +90,21 @@ func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
 			os.Exit(1)
 		case <-a.eventMgmtTicker.C:
 			a.logger.Info("Begin event syncing")
+			m, err := a.authStore.GetMeetupToken()
+			if err != nil {
+				a.logger.Errorf("Unable to retrieve meetup token. %v", err)
+			}
+			meetupClient := eventmgmt.NewMeetup(a.logger, http.DefaultClient, a.config.MeetupConfig.MeetupGroup, m.AccessToken)
+			s := eventstore.NewEventStore(a.logger, meetupClient, a.calendarSvc, a.config.EventStoreFile, a.config.CalendarConfig.CalendarID, a.config.CalendarConfig.CalendarEventInvitation)
+			err = s.CheckEvents(time.Now())
+
+			if err != nil {
+				a.logger.Errorf("Issue when checking events. %v", err)
+			}
+
 			time.Sleep(1 * time.Second)
 		case <-a.authRefresherTicker.C:
+			a.logger.Info("Begin refreshing tokens")
 			err := a.googleAuth.Refresh()
 			if err != nil {
 				a.logger.Errorf("Unable to refresh Google Access Tokens. Err: %v", err)
