@@ -24,16 +24,16 @@ go build -o techmeetup ./cmd
 
 # In progress features
 
-- Handle calendar invites -> need to consider speakers/organizers
+- Handle calendar invites -> Done, awaiting integration
   - Read calendar invites for event
   - Create calendar invites for events
   - Update calendar invites for events
 - To update streamyard
   - Read events from streamyard - Done, require integration
-  - Create event in streamyard - Done but need to consider facebook destination
+  - Create event in streamyard
   - Update event in streamyard
-- To update meetup.com
-  - Read events from meetup.com - Done, require integration
+- To update meetup.com - Done, awaiting integration
+  - Read events from meetup.com
   - Create events into meetup.com
   - Update events into meetup.com
 
