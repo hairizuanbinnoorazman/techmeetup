@@ -121,7 +121,12 @@ func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, err
 		isPublic = true
 	}
 
-	parsedTime, _ := time.Parse("2006-01-02T15:04:05Z", aa.Outputs[0].PlannedStartTime)
+	parsedTime, err := time.Parse("2006-01-02T15:04:05Z", aa.Outputs[0].PlannedStartTime)
+	if err != nil {
+		return Stream{}, fmt.Errorf("Unable to parse timeoutputs. Input time value: %v", aa.Outputs[0].PlannedStartTime)
+	}
+	loc, _ := time.LoadLocation("Asia/Singapore")
+	parsedTime = parsedTime.In(loc)
 
 	ds := []Destination{}
 	for _, zz := range aa.Outputs {
