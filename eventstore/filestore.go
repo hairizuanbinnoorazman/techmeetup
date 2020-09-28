@@ -238,6 +238,16 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 			return e
 		}
 		e.MeetupID = resp.ID
+		photoID, err := s.meetupClient.UploadPhoto(context.TODO(), resp.ID, e.FeaturedImagePath)
+		if err != nil {
+			s.logger.Errorf("Unable to upload photo. Err: %v", err)
+			return e
+		}
+		_, err = s.meetupClient.UpdateEvent(context.TODO(), resp, eventmgmt.WithFeaturedPhoto(photoID))
+		if err != nil {
+			s.logger.Errorf("Unable to update event with featured photo")
+			return e
+		}
 		return e
 	}
 
