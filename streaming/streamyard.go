@@ -259,10 +259,20 @@ func (s Streamyard) UpdateDestination(ctx context.Context, ss Stream, destinatio
 	return Stream{}, nil
 }
 
-func (s Streamyard) GetDestinations(ctx context.Context) ([]string, error) {
+type StreamyardDestinationResp struct {
+	Destinations []StreamyardDestination `json:"destinations"`
+}
+
+type StreamyardDestination struct {
+	PlatformUsername string `json:"platformUsername"`
+	Platform         string `json:"platform"`
+	ID               string `json:"id"`
+}
+
+func (s Streamyard) GetDestinations(ctx context.Context) ([]StreamyardDestination, error) {
 	err := s.jwtChecker()
 	if err != nil {
-		return []string{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
+		return nil, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
 
 	initialURL := "https://streamyard.com/api/destinations"
@@ -274,15 +284,16 @@ func (s Streamyard) GetDestinations(ctx context.Context) ([]string, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, finalURL.String(), nil)
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
-
 	raw, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
-	s.logger.Info(string(raw))
-	return []string{}, nil
+	var ssResp StreamyardDestinationResp
+	// s.logger.Info(string(raw))
+	json.Unmarshal(raw, &ssResp)
+	return ssResp.Destinations, nil
 }
 
 func (s Streamyard) ListStreams(ctx context.Context) ([]Stream, error) {
@@ -307,8 +318,40 @@ func (s Streamyard) ListStreams(ctx context.Context) ([]Stream, error) {
 	if err != nil {
 		return []Stream{}, err
 	}
-	s.logger.Info(string(raw))
-	return []Stream{}, nil
+	// s.logger.Info(string(raw))
+	ss := []Stream{}
+	var ssList StreamyardListResponse
+	json.Unmarshal(raw, &ssList)
+	for _, item := range ssList.Broadcasts {
+		if len(item.Outputs) == 0 {
+			continue
+		}
+		isPublic := false
+		if item.Outputs[0].Privacy == "public" {
+			isPublic = true
+		}
+
+		parsedTime, _ := time.Parse("2006-01-02T15:04:05Z", item.Outputs[0].PlannedStartTime)
+
+		ds := []Destination{}
+		for _, zz := range item.Outputs {
+			ds = append(ds, Destination{
+				ID:   zz.ID,
+				Type: zz.Platform,
+				Link: zz.PlatformLink,
+			})
+		}
+
+		ss = append(ss, Stream{
+			ID:           item.ID,
+			StartDate:    parsedTime,
+			Name:         item.Title,
+			Description:  item.Outputs[0].Description,
+			IsPublic:     isPublic,
+			Destinations: ds,
+		})
+	}
+	return ss, nil
 }
 
 func (s *Streamyard) createCookiejar(reqUrl *url.URL) *cookiejar.Jar {
