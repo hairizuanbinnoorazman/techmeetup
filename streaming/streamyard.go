@@ -84,6 +84,10 @@ func NewStreamyard(logger logger.Logger, client *http.Client, csrfToken, jwt, us
 }
 
 func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, error) {
+	if streamID == "" {
+		return Stream{}, fmt.Errorf("StreamID is missing. Please provide streamID value first")
+	}
+
 	err := s.jwtChecker()
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
@@ -148,6 +152,10 @@ func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, err
 }
 
 func (s Streamyard) CreateStream(ctx context.Context, title string) (Stream, error) {
+	if title == "" {
+		return Stream{}, fmt.Errorf("No title provided to stream. Please relook at the inputs for this")
+	}
+
 	err := s.jwtChecker()
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
