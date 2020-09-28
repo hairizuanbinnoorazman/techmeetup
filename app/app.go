@@ -96,7 +96,7 @@ func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
 			if err != nil {
 				a.logger.Errorf("Unable to retrieve meetup token. %v", err)
 			}
-			meetupClient := eventmgmt.NewMeetup(a.logger, http.DefaultClient, a.config.MeetupConfig.MeetupGroup, m.AccessToken)
+			meetupClient := eventmgmt.NewMeetup(a.logger, http.DefaultClient, a.config.MeetupConfig.MeetupGroup, m.AccessToken, a.config.MeetupConfig.OrganizerMapping)
 			streamyardClient := streaming.NewStreamyard(a.logger, http.DefaultClient, a.config.Streamyard.CSRFToken, a.config.Streamyard.JWT, a.config.StreamyardConfig.UserID, a.config.StreamyardConfig.YoutubeDestination, a.config.StreamyardConfig.FacebookGroupDestination)
 			s := eventstore.NewEventStore(a.logger, meetupClient, a.calendarSvc, streamyardClient, a.config.EventStoreFile, a.config.CalendarConfig.CalendarID, a.config.CalendarConfig.CalendarEventInvitation, a.config.Features.MeetupSync.SubFeatures)
 			err = s.CheckEvents(time.Now())
