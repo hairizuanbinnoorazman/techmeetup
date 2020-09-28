@@ -197,6 +197,10 @@ func (s Streamyard) CreateStream(ctx context.Context, title string) (Stream, err
 }
 
 func (s Streamyard) CreateDestination(ctx context.Context, destinationStreamType string, ss Stream) (Stream, error) {
+	if destinationStreamType == "" || ss.ID == "" {
+		return Stream{}, fmt.Errorf("Destination Stream Type is empty or no reference pass for which stream to adjust. Do relook inputs")
+	}
+
 	err := s.jwtChecker()
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
