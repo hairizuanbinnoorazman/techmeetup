@@ -3,6 +3,8 @@ package eventmgmt
 
 import (
 	"context"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -14,23 +16,37 @@ type EventMgmt interface {
 }
 
 type Event struct {
+	ID          string
 	StartTime   time.Time
-	EventName   string
+	Name        string
 	Description string
-	Organizers  []string
 	IsWebinar   bool
 	WebinarLink string
-	Agenda      []AgendaItem
+	// Meetup organizer
+	Organizers []string
+	// Time in minutes
+	// This is temporarily set
+	Duration int
 }
 
-type AgendaItem struct {
-	// Type can be either break/speaker
-	Type           string
-	Name           string
-	ProfilePicture string
-	Profile        string
-	StartTime      time.Time
-	Duration       time.Duration
-	Topic          string
-	Synopsis       string
+func NewEvent(name, description, startTime string) (Event, error) {
+	loc, _ := time.LoadLocation("Asia/Singapore")
+	zz, err := time.ParseInLocation("2006-01-02T15:04:05", startTime, loc)
+	if err != nil {
+		return Event{}, err
+	}
+	return Event{
+		StartTime:   zz,
+		Name:        name,
+		Description: description,
+		IsWebinar:   true,
+		Duration:    120,
+	}, nil
+}
+
+func convertDescriptionToMeetupHTML(desc string) string {
+	re := regexp.MustCompile(`((http|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?)`)
+	output := re.ReplaceAllString(desc, "<a href=\"$1\">$1</a>")
+	output = strings.ReplaceAll(output, "\n", "</br>")
+	return output
 }
