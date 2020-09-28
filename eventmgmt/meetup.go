@@ -126,19 +126,19 @@ func (m *Meetup) GetEvent(ctx context.Context, id string) (Event, error) {
 	}, nil
 }
 
-func (m *Meetup) UploadPhoto(ctx context.Context, eventID, photoFilePath string) error {
+func (m *Meetup) UploadPhoto(ctx context.Context, eventID, photoFilePath string) (string, error) {
 	initialURL := fmt.Sprintf("https://api.meetup.com/%v/events/%v/photos", m.meetupGroup, eventID)
 	file, err := os.Open(photoFilePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	fileContents, err := ioutil.ReadAll(file)
 	if err != nil {
-		return err
+		return "", err
 	}
 	fi, err := file.Stat()
 	if err != nil {
-		return err
+		return "", err
 	}
 	file.Close()
 
@@ -146,7 +146,7 @@ func (m *Meetup) UploadPhoto(ctx context.Context, eventID, photoFilePath string)
 	writer := multipart.NewWriter(body)
 	part, err := writer.CreateFormFile("photo", fi.Name())
 	if err != nil {
-		return err
+		return "", err
 	}
 	part.Write(fileContents)
 	writer.Close()
@@ -156,14 +156,14 @@ func (m *Meetup) UploadPhoto(ctx context.Context, eventID, photoFilePath string)
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", m.accessToken))
 	resp, err := m.client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	rawResp, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	m.logger.Info(string(rawResp))
-	return nil
+	return "", nil
 }
 
 func (m *Meetup) CreateDraftEvent(ctx context.Context, e Event) (Event, error) {
