@@ -83,6 +83,65 @@ func NewStreamyard(logger logger.Logger, client *http.Client, csrfToken, jwt, us
 	}
 }
 
+func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, error) {
+	err := s.jwtChecker()
+	if err != nil {
+		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
+	}
+
+	initialURL := fmt.Sprintf("https://streamyard.com/api/broadcasts/%v", streamID)
+	finalURL, _ := url.ParseRequestURI(initialURL)
+
+	cj := s.createCookiejar(finalURL)
+	s.client.Jar = cj
+
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, finalURL.String(), nil)
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("origin", "https://streamyard.com")
+	req.Header.Add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36")
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return Stream{}, err
+	}
+	raw, err := ioutil.ReadAll(resp.Body)
+
+	// s.logger.Info(string(raw))
+
+	var aa StreamyardBroadcastResponse
+	err = json.Unmarshal(raw, &aa)
+	if err != nil {
+		return Stream{}, fmt.Errorf("Unable to parse json output. Err: %v", err)
+	}
+
+	if len(aa.Outputs) == 0 {
+		return Stream{}, fmt.Errorf("Output streams are missing")
+	}
+	isPublic := false
+	if aa.Outputs[0].Privacy == "public" {
+		isPublic = true
+	}
+
+	parsedTime, _ := time.Parse("2006-01-02T15:04:05Z", aa.Outputs[0].PlannedStartTime)
+
+	ds := []Destination{}
+	for _, zz := range aa.Outputs {
+		ds = append(ds, Destination{
+			ID:   zz.ID,
+			Type: zz.Platform,
+			Link: zz.PlatformLink,
+		})
+	}
+
+	return Stream{
+		ID:           aa.ID,
+		StartDate:    parsedTime,
+		Name:         aa.Title,
+		Description:  aa.Outputs[0].Description,
+		IsPublic:     isPublic,
+		Destinations: ds,
+	}, nil
+}
+
 func (s Streamyard) CreateStream(ctx context.Context, title string) (Stream, error) {
 	err := s.jwtChecker()
 	if err != nil {
