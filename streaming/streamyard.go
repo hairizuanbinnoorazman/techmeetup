@@ -71,13 +71,15 @@ type StreamyardBroadcastOutputResponse struct {
 	Image            string `json:"image"`
 }
 
-func NewStreamyard(logger logger.Logger, client *http.Client, csrfToken, jwt, userID string) Streamyard {
+func NewStreamyard(logger logger.Logger, client *http.Client, csrfToken, jwt, userID, youtubeDestination, facebookDestination string) Streamyard {
 	return Streamyard{
-		logger:    logger,
-		client:    client,
-		csrfToken: csrfToken,
-		jwt:       jwt,
-		userID:    userID,
+		logger:              logger,
+		client:              client,
+		csrfToken:           csrfToken,
+		jwt:                 jwt,
+		userID:              userID,
+		youtubeDestination:  youtubeDestination,
+		facebookDestination: facebookDestination,
 	}
 }
 
