@@ -277,6 +277,10 @@ func (s Streamyard) CreateDestination(ctx context.Context, destinationStreamType
 }
 
 func (s Streamyard) UpdateDestination(ctx context.Context, ss Stream, destinationID string) (Stream, error) {
+	if ss.ID == "" || destinationID == "" {
+		return Stream{}, fmt.Errorf("No stream ID reference or destination ID reference provided. Please recheck inputs")
+	}
+
 	err := s.jwtChecker()
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
