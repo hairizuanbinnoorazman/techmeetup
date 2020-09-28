@@ -300,11 +300,26 @@ func (s *EventStore) createOrUpdateCalendar(e Event) Event {
 
 	if e.CalendarEventID == "" {
 		s.logger.Info("Detected that the calendar event id is not set - will create calendar event")
+		zz := make(map[string]bool)
+		for _, organizer := range e.Organizers {
+			zz[organizer.Email] = true
+		}
+		for _, agenda := range e.Agenda {
+			for _, speaker := range agenda.Speakers {
+				zz[speaker.Email] = true
+			}
+		}
+		yy := []string{}
+		for k := range zz {
+			yy = append(yy, k)
+		}
+
 		resp, err := s.calendarSvc.CreateEvent(context.TODO(), s.calendarID, calendar.CalendarEvent{
 			StartTime:   e.StartDate,
 			EndTime:     e.StartDate.Add(time.Duration(e.Duration) * time.Minute),
 			Title:       e.Title,
 			Description: fmt.Sprintf(s.calendarEventInvite, e.StreamyardLink),
+			Attendees:   yy,
 		})
 		if err != nil {
 			s.logger.Errorf("Unable to create calendar event. Err: %v", err)
