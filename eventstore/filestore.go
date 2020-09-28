@@ -49,18 +49,19 @@ func NewEventStore(l logger.Logger, eventMgmt eventmgmt.Meetup, calendarSvc cale
 }
 
 type Event struct {
-	TrackEvent      bool         `yaml:"track_event"`
-	StartDate       time.Time    `yaml:"start_date"`
-	Title           string       `yaml:"title"`
-	Description     string       `yaml:"description"`
-	IsOnline        bool         `yaml:"is_online"`
-	YoutubeLink     string       `yaml:"youtube_link"`
-	FacebookLink    string       `yaml:"facebook_link"`
-	StreamyardLink  string       `yaml:"streamyard_link"`
-	MeetupID        string       `yaml:"meetup_id"`
-	CalendarEventID string       `yaml:"calendar_event_id"`
-	Organizers      []Organizer  `yaml:"organizers"`
-	Agenda          []AgendaItem `yaml:"agenda"`
+	TrackEvent        bool         `yaml:"track_event"`
+	FeaturedImagePath string       `yaml:"featured_image_path"`
+	StartDate         time.Time    `yaml:"start_date"`
+	Title             string       `yaml:"title"`
+	Description       string       `yaml:"description"`
+	IsOnline          bool         `yaml:"is_online"`
+	YoutubeLink       string       `yaml:"youtube_link"`
+	FacebookLink      string       `yaml:"facebook_link"`
+	StreamyardLink    string       `yaml:"streamyard_link"`
+	MeetupID          string       `yaml:"meetup_id"`
+	CalendarEventID   string       `yaml:"calendar_event_id"`
+	Organizers        []Organizer  `yaml:"organizers"`
+	Agenda            []AgendaItem `yaml:"agenda"`
 	// In minutes
 	Duration int `yaml:"duration"`
 }
@@ -212,8 +213,17 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 		return e
 	}
 
+	if e.FeaturedImagePath == "" {
+		s.logger.Error("No featured image provided. Please provide it")
+		return e
+	}
+
 	if e.MeetupID == "" {
 		s.logger.Info("Detected that meetup link is not created for this event. Will recreate")
+		meetupOrganizers := []string{}
+		for _, o := range s.meetupClient.OrganizerMapping {
+			meetupOrganizers = append(meetupOrganizers, o)
+		}
 		resp, err := s.meetupClient.CreateDraftEvent(context.TODO(), eventmgmt.Event{
 			StartTime:   e.StartDate,
 			Name:        e.Title,
@@ -221,6 +231,7 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 			IsWebinar:   true,
 			WebinarLink: e.YoutubeLink,
 			Duration:    120,
+			Organizers:  meetupOrganizers,
 		})
 		if err != nil {
 			s.logger.Errorf("Unable to create draft event. Err: %v", err)
@@ -251,6 +262,11 @@ func (s *EventStore) createOrUpdateStreamyard(e Event) Event {
 
 	if e.YoutubeLink != "" && e.StreamyardLink == "" {
 		s.logger.Error("Youtube link already available although streamyard link is still not available")
+		return e
+	}
+
+	if e.FeaturedImagePath == "" {
+		s.logger.Error("No featured image provided. Please provide it")
 		return e
 	}
 
