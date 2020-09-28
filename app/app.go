@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/hairizuanbinnoorazman/techmeetup/streaming"
+
 	calendarZ "github.com/hairizuanbinnoorazman/techmeetup/calendar"
 	"github.com/hairizuanbinnoorazman/techmeetup/eventmgmt"
 	"github.com/hairizuanbinnoorazman/techmeetup/eventstore"
@@ -95,7 +97,8 @@ func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
 				a.logger.Errorf("Unable to retrieve meetup token. %v", err)
 			}
 			meetupClient := eventmgmt.NewMeetup(a.logger, http.DefaultClient, a.config.MeetupConfig.MeetupGroup, m.AccessToken)
-			s := eventstore.NewEventStore(a.logger, meetupClient, a.calendarSvc, a.config.EventStoreFile, a.config.CalendarConfig.CalendarID, a.config.CalendarConfig.CalendarEventInvitation)
+			streamyardClient := streaming.NewStreamyard(a.logger, http.DefaultClient, a.config.Streamyard.CSRFToken, a.config.Streamyard.JWT, a.config.StreamyardConfig.UserID, a.config.StreamyardConfig.YoutubeDestination, a.config.StreamyardConfig.FacebookGroupDestination)
+			s := eventstore.NewEventStore(a.logger, meetupClient, a.calendarSvc, streamyardClient, a.config.EventStoreFile, a.config.CalendarConfig.CalendarID, a.config.CalendarConfig.CalendarEventInvitation, a.config.Features.MeetupSync.SubFeatures)
 			err = s.CheckEvents(time.Now())
 
 			if err != nil {
