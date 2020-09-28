@@ -18,10 +18,11 @@ import (
 )
 
 type Meetup struct {
-	logger      logger.Logger
-	client      *http.Client
-	accessToken string
-	meetupGroup string
+	logger           logger.Logger
+	client           *http.Client
+	accessToken      string
+	meetupGroup      string
+	OrganizerMapping map[string]string
 }
 
 type MeetupEventResp struct {
@@ -53,12 +54,13 @@ type MeetupFeaturedPhoto struct {
 	Type        string `json:"type"`
 }
 
-func NewMeetup(logger logger.Logger, client *http.Client, meetupGroup, accessToken string) Meetup {
+func NewMeetup(logger logger.Logger, client *http.Client, meetupGroup, accessToken string, organizerMapping map[string]string) Meetup {
 	return Meetup{
-		logger:      logger,
-		client:      client,
-		accessToken: accessToken,
-		meetupGroup: meetupGroup,
+		logger:           logger,
+		client:           client,
+		accessToken:      accessToken,
+		meetupGroup:      meetupGroup,
+		OrganizerMapping: organizerMapping,
 	}
 }
 
