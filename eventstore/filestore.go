@@ -287,6 +287,7 @@ func (s *EventStore) createOrUpdateStreamyard(e Event) Event {
 			s.logger.Error("Unable to create the stream on streamyard. Err: %v", err)
 			return e
 		}
+		streamCreateResp.ImagePath = e.FeaturedImagePath
 		streamDestResp, err := s.streamyardSvc.CreateDestination(context.TODO(), "youtube", streamCreateResp)
 		if err != nil {
 			s.logger.Error("Unable to create the output on streamyard. Err: %v", err)
