@@ -3,6 +3,8 @@ package app
 import (
 	"io/ioutil"
 
+	"github.com/hairizuanbinnoorazman/techmeetup/eventstore"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -57,19 +59,9 @@ type FeatureControl struct {
 }
 
 type MeetupFeatureControl struct {
-	Enabled      bool                    `yaml:"enabled"`
-	DryRunMode   bool                    `yaml:"dryrun_mode"`
-	IdleDuration int                     `yaml:"idle_duration"`
-	SubFeatures  SubMeetupFeatureControl `yaml:"subfeatures"`
-}
-
-type SubMeetupFeatureControl struct {
-	StreamyardSync     bool `yaml:"streamyard_sync"`
-	CalendarSync       bool `yaml:"calendar_sync"`
-	MeetupSync         bool `yaml:"meetup_sync"`
-	SlidesSync         bool `yaml:"slides_sync"`
-	SheetsReporterSync bool `yaml:"sheets_reporter_sync"`
-	PostYoutubeSync    bool `yaml:"post_youtube_sync"`
+	Enabled      bool                               `yaml:"enabled"`
+	IdleDuration int                                `yaml:"idle_duration"`
+	SubFeatures  eventstore.SubMeetupFeatureControl `yaml:"subfeatures"`
 }
 
 type MeetupCredentials struct {
