@@ -308,14 +308,30 @@ func (s Streamyard) CreateDestination(ctx context.Context, destinationStreamType
 	return ss, nil
 }
 
-func (s Streamyard) UpdateDestination(ctx context.Context, ss Stream, destinationID string) (Stream, error) {
-	if ss.ID == "" || destinationID == "" {
+func (s Streamyard) UpdateDestination(ctx context.Context, destinationStreamType string, ss Stream, forceImageUpdate bool) (Stream, error) {
+	if ss.ID == "" || ss.Description == "" || ss.StartDate.IsZero() || ss.Name == "" || len(ss.Destinations) == 0 {
 		return ss, fmt.Errorf("No stream ID reference or destination ID reference provided. Please recheck inputs")
+	}
+	if forceImageUpdate {
+		if ss.ImagePath == "" {
+			return ss, fmt.Errorf("Attempt to update the image but no image path provided")
+		}
 	}
 
 	err := s.jwtChecker()
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
+	}
+
+	destinationID := ""
+	for _, dest := range ss.Destinations {
+		if strings.ToLower(dest.Type) == strings.ToLower(destinationStreamType) {
+			destinationID = dest.ID
+		}
+	}
+
+	if destinationID == "" {
+		return ss, fmt.Errorf("No matching stream types - please review data. %v", ss)
 	}
 
 	initialURL := fmt.Sprintf("https://streamyard.com/api/broadcasts/%v/outputs/%v", ss.ID, destinationID)
@@ -324,16 +340,6 @@ func (s Streamyard) UpdateDestination(ctx context.Context, ss Stream, destinatio
 	cj := s.createCookiejar(finalURL)
 	s.client.Jar = cj
 
-	rawImage, err := ioutil.ReadFile(ss.ImagePath)
-	if err != nil {
-		return ss, fmt.Errorf("Unable to load image file. Please check path to ensure correct. Err: %v", err)
-	}
-
-	imageContentType, err := imageTypeDetector(ss.ImagePath)
-	if err != nil {
-		return ss, fmt.Errorf("Unexpected Image Type found. Please review file type. Err: %v", err)
-	}
-
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 	part, _ := writer.CreateFormField("title")
@@ -341,15 +347,27 @@ func (s Streamyard) UpdateDestination(ctx context.Context, ss Stream, destinatio
 	part, _ = writer.CreateFormField("description")
 	part.Write([]byte(ss.Description))
 
-	// Special code to cope with custom type
-	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition",
-		fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
-			"image", "blob"))
-	h.Set("Content-Type", imageContentType)
-	part, _ = writer.CreatePart(h)
-	part.Write(rawImage)
-	// Special code to cope with custom type
+	if forceImageUpdate {
+		rawImage, err := ioutil.ReadFile(ss.ImagePath)
+		if err != nil {
+			return ss, fmt.Errorf("Unable to load image file. Please check path to ensure correct. Err: %v", err)
+		}
+
+		imageContentType, err := imageTypeDetector(ss.ImagePath)
+		if err != nil {
+			return ss, fmt.Errorf("Unexpected Image Type found. Please review file type. Err: %v", err)
+		}
+
+		// Special code to cope with custom type
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition",
+			fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+				"image", "blob"))
+		h.Set("Content-Type", imageContentType)
+		part, _ = writer.CreatePart(h)
+		part.Write(rawImage)
+		// Special code to cope with custom type
+	}
 
 	part, _ = writer.CreateFormField("plannedStartTime")
 	part.Write([]byte(streamyardCompatibleTimeFormat(ss.StartDate)))
