@@ -344,7 +344,7 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 				e.YoutubeLink = dest.Link
 			}
 		}
-		s.logger.Info("Create of streamyard youtube stream complete")
+		s.logger.Infof("Create of streamyard youtube stream complete. Event: %v", e)
 		return e
 	}
 
