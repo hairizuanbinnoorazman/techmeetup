@@ -87,18 +87,20 @@ func (e Event) Validate() error {
 
 func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type alias struct {
-		TrackEvent      bool         `yaml:"track_event"`
-		StartDate       string       `yaml:"start_date"`
-		Title           string       `yaml:"title"`
-		Description     string       `yaml:"description"`
-		IsOnline        bool         `yaml:"is_online"`
-		YoutubeLink     string       `yaml:"youtube_link"`
-		FacebookLink    string       `yaml:"facebook_link"`
-		StreamyardID    string       `yaml:"streamyard_id"`
-		MeetupID        string       `yaml:"meetup_id"`
-		CalendarEventID string       `yaml:"calendar_event_id"`
-		Organizers      []Organizer  `yaml:"organizers"`
-		Agenda          []AgendaItem `yaml:"agenda"`
+		TrackEvent             bool         `yaml:"track_event"`
+		UpdateImageOnPlatforms bool         `yaml:"update_image_on_platforms"`
+		FeaturedImagePath      string       `yaml:"featured_image_path"`
+		StartDate              string       `yaml:"start_date"`
+		Title                  string       `yaml:"title"`
+		Description            string       `yaml:"description"`
+		IsOnline               bool         `yaml:"is_online"`
+		YoutubeLink            string       `yaml:"youtube_link"`
+		FacebookLink           string       `yaml:"facebook_link"`
+		StreamyardID           string       `yaml:"streamyard_id"`
+		MeetupID               string       `yaml:"meetup_id"`
+		CalendarEventID        string       `yaml:"calendar_event_id"`
+		Organizers             []Organizer  `yaml:"organizers"`
+		Agenda                 []AgendaItem `yaml:"agenda"`
 		// In minutes
 		Duration int `yaml:"duration"`
 	}
@@ -109,12 +111,14 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	loc, _ := time.LoadLocation("Asia/Singapore")
-	startDate, err := time.ParseInLocation("2006-01-02T15:04:05", tmp.StartDate, loc)
+	startDate, err := time.ParseInLocation("2006-01-02T15:04:05Z07:00", tmp.StartDate, loc)
 	if err != nil {
 		return fmt.Errorf("Unable to parse dates: Err: %v", err)
 	}
 
 	e.TrackEvent = tmp.TrackEvent
+	e.FeaturedImagePath = tmp.FeaturedImagePath
+	e.UpdateImageOnPlatforms = tmp.UpdateImageOnPlatforms
 	e.StartDate = startDate
 	e.Title = tmp.Title
 	e.Description = tmp.Description
@@ -132,12 +136,10 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 type AgendaItem struct {
 	// Type can be either break/speaker
-	Type      string        `yaml:"type"`
-	StartTime time.Time     `yaml:"start_time"`
-	Duration  time.Duration `yaml:"duration"`
-	Topic     string        `yaml:"topic"`
-	Synopsis  string        `yaml:"synopsis"`
-	Speakers  []Speaker     `yaml:"speakers"`
+	Type     string    `yaml:"type"`
+	Topic    string    `yaml:"topic"`
+	Synopsis string    `yaml:"synopsis"`
+	Speakers []Speaker `yaml:"speakers"`
 }
 
 type Organizer struct {
@@ -158,7 +160,10 @@ func (s EventStore) CheckEvents(filterDate time.Time) error {
 		return err
 	}
 	var data []Event
-	yaml.Unmarshal(raw, &data)
+	err = yaml.Unmarshal(raw, &data)
+	if err != nil {
+		return fmt.Errorf("Issue with unmarshalling data. Err: %v", err)
+	}
 
 	for idx, d := range data {
 		if d.TrackEvent == false {
@@ -324,7 +329,10 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 			s.logger.Error("Unable to create the stream on streamyard. Err: %v", err)
 			return e
 		}
+		streamCreateResp.StartDate = e.StartDate
 		streamCreateResp.ImagePath = e.FeaturedImagePath
+		streamCreateResp.Description = e.Description
+		s.logger.Infof("Created streamyard: %+v", streamCreateResp)
 		streamDestResp, err := s.streamyardSvc.CreateDestination(context.TODO(), "youtube", streamCreateResp)
 		if err != nil {
 			s.logger.Error("Unable to create the output on streamyard. Err: %v", err)
@@ -352,6 +360,7 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 		streamyardStream.Description = e.Description
 		streamyardStream.Name = e.Title
 		streamyardStream.ImagePath = e.FeaturedImagePath
+		streamyardStream.StartDate = e.StartDate
 		s.streamyardSvc.UpdateDestination(context.TODO(), "youtube", streamyardStream, e.UpdateImageOnPlatforms)
 		s.logger.Info("End update of streamyard")
 	}
