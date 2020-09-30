@@ -167,6 +167,10 @@ func (m *Meetup) UploadPhoto(ctx context.Context, eventID, photoFilePath string)
 }
 
 func (m *Meetup) CreateDraftEvent(ctx context.Context, e Event) (Event, error) {
+	if e.Description == "" || e.Name == "" || len(e.Organizers) == 0 || e.StartTime.IsZero() || e.WebinarLink == "" {
+		return e, fmt.Errorf("Missing items in event. Event: %v", e)
+	}
+
 	initialURl := fmt.Sprintf("https://api.meetup.com/%v/events", m.meetupGroup)
 	data := url.Values{}
 
@@ -209,8 +213,8 @@ func WithFeaturedPhoto(photoID string) func(url.Values) {
 }
 
 func (m *Meetup) UpdateEvent(ctx context.Context, e Event, f ...func(url.Values)) (Event, error) {
-	if e.ID == "" {
-		return Event{}, fmt.Errorf("No meetup event identified. Update cancelled")
+	if e.ID == "" || e.Name == "" || e.Description == "" || len(e.Organizers) == 0 || e.StartTime.IsZero() || e.WebinarLink == "" {
+		return Event{}, fmt.Errorf("Missing event details. Event: %+v", e)
 	}
 	initialURl := fmt.Sprintf("https://api.meetup.com/%v/events/%v", m.meetupGroup, e.ID)
 	data := url.Values{}
