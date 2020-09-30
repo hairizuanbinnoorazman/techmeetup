@@ -49,19 +49,20 @@ func NewEventStore(l logger.Logger, eventMgmt eventmgmt.Meetup, calendarSvc cale
 }
 
 type Event struct {
-	TrackEvent        bool         `yaml:"track_event"`
-	FeaturedImagePath string       `yaml:"featured_image_path"`
-	StartDate         time.Time    `yaml:"start_date"`
-	Title             string       `yaml:"title"`
-	Description       string       `yaml:"description"`
-	IsOnline          bool         `yaml:"is_online"`
-	YoutubeLink       string       `yaml:"youtube_link"`
-	FacebookLink      string       `yaml:"facebook_link"`
-	StreamyardLink    string       `yaml:"streamyard_link"`
-	MeetupID          string       `yaml:"meetup_id"`
-	CalendarEventID   string       `yaml:"calendar_event_id"`
-	Organizers        []Organizer  `yaml:"organizers"`
-	Agenda            []AgendaItem `yaml:"agenda"`
+	TrackEvent             bool         `yaml:"track_event"`
+	UpdateImageOnPlatforms bool         `yaml:"update_image_on_platforms"`
+	FeaturedImagePath      string       `yaml:"featured_image_path"`
+	StartDate              time.Time    `yaml:"start_date"`
+	Title                  string       `yaml:"title"`
+	Description            string       `yaml:"description"`
+	IsOnline               bool         `yaml:"is_online"`
+	YoutubeLink            string       `yaml:"youtube_link"`
+	FacebookLink           string       `yaml:"facebook_link"`
+	StreamyardLink         string       `yaml:"streamyard_link"`
+	MeetupID               string       `yaml:"meetup_id"`
+	CalendarEventID        string       `yaml:"calendar_event_id"`
+	Organizers             []Organizer  `yaml:"organizers"`
+	Agenda                 []AgendaItem `yaml:"agenda"`
 	// In minutes
 	Duration int `yaml:"duration"`
 }
