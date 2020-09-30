@@ -182,6 +182,9 @@ func (s EventStore) CheckEvents(filterDate time.Time) error {
 
 		tmpEvent = s.createOrUpdateCalendar(tmpEvent)
 		data[idx].CalendarEventID = tmpEvent.CalendarEventID
+
+		// Cleanup for platform updates
+		data[idx].UpdateImageOnPlatforms = false
 	}
 
 	rawData, err := yaml.Marshal(data)
@@ -250,6 +253,39 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 			return e
 		}
 		return e
+	}
+
+	meetupEvent, err := s.meetupClient.GetEvent(context.TODO(), e.MeetupID)
+	if err != nil {
+		s.logger.Errorf("Unable to retrieve event details from meetup. Err: %v MeetupID: %v", err, e.MeetupID)
+		return e
+	}
+	parsedDesc := eventmgmt.ConvertDescriptionToMeetupHTML(e.Description)
+	if (meetupEvent.Description != parsedDesc || meetupEvent.Name != e.Title) && !e.UpdateImageOnPlatforms {
+		s.logger.Info("Begin update of meetup - no image update needed")
+		meetupEvent.Description = e.Description
+		meetupEvent.Name = e.Title
+		s.meetupClient.UpdateEvent(context.TODO(), meetupEvent)
+		s.logger.Info("End update of meetup - no image update needed")
+		return e
+	}
+
+	if e.UpdateImageOnPlatforms {
+		s.logger.Info("Begin update of meetup - with image update needed")
+		meetupEvent.Description = e.Description
+		meetupEvent.Name = e.Title
+		photoID, err := s.meetupClient.UploadPhoto(context.TODO(), meetupEvent.ID, e.FeaturedImagePath)
+		if err != nil {
+			s.logger.Errorf("Unable to upload photo. Err: %v", err)
+			return e
+		}
+		_, err = s.meetupClient.UpdateEvent(context.TODO(), meetupEvent, eventmgmt.WithFeaturedPhoto(photoID))
+		if err != nil {
+			s.logger.Errorf("Unable to update event with featured photo")
+			return e
+		}
+		e.UpdateImageOnPlatforms = false
+		s.logger.Info("End update of meetup - with image update needed")
 	}
 
 	return e

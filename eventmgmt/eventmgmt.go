@@ -44,7 +44,7 @@ func NewEvent(name, description, startTime string) (Event, error) {
 	}, nil
 }
 
-func convertDescriptionToMeetupHTML(desc string) string {
+func ConvertDescriptionToMeetupHTML(desc string) string {
 	re := regexp.MustCompile(`((http|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?)`)
 	output := re.ReplaceAllString(desc, "<a href=\"$1\">$1</a>")
 	output = strings.ReplaceAll(output, "\n", "</br>")
