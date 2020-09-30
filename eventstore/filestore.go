@@ -58,7 +58,7 @@ type Event struct {
 	IsOnline               bool         `yaml:"is_online"`
 	YoutubeLink            string       `yaml:"youtube_link"`
 	FacebookLink           string       `yaml:"facebook_link"`
-	StreamyardLink         string       `yaml:"streamyard_link"`
+	StreamyardID           string       `yaml:"streamyard_id"`
 	MeetupID               string       `yaml:"meetup_id"`
 	CalendarEventID        string       `yaml:"calendar_event_id"`
 	Organizers             []Organizer  `yaml:"organizers"`
@@ -94,7 +94,7 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		IsOnline        bool         `yaml:"is_online"`
 		YoutubeLink     string       `yaml:"youtube_link"`
 		FacebookLink    string       `yaml:"facebook_link"`
-		StreamyardLink  string       `yaml:"streamyard_link"`
+		StreamyardID    string       `yaml:"streamyard_id"`
 		MeetupID        string       `yaml:"meetup_id"`
 		CalendarEventID string       `yaml:"calendar_event_id"`
 		Organizers      []Organizer  `yaml:"organizers"`
@@ -121,7 +121,7 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	e.IsOnline = tmp.IsOnline
 	e.YoutubeLink = tmp.YoutubeLink
 	e.FacebookLink = tmp.FacebookLink
-	e.StreamyardLink = tmp.StreamyardLink
+	e.StreamyardID = tmp.StreamyardID
 	e.MeetupID = tmp.MeetupID
 	e.CalendarEventID = tmp.CalendarEventID
 	e.Organizers = tmp.Organizers
@@ -173,8 +173,8 @@ func (s EventStore) CheckEvents(filterDate time.Time) error {
 
 		tmpEvent := d
 
-		tmpEvent = s.createOrUpdateStreamyard(tmpEvent)
-		data[idx].StreamyardLink = tmpEvent.StreamyardLink
+		tmpEvent = s.createOrUpdateYoutubeStreamyard(tmpEvent)
+		data[idx].StreamyardID = tmpEvent.StreamyardID
 		data[idx].YoutubeLink = tmpEvent.YoutubeLink
 
 		tmpEvent = s.createOrUpdateMeetup(tmpEvent)
@@ -209,7 +209,7 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 		return e
 	}
 
-	if e.YoutubeLink == "" || e.StreamyardLink == "" {
+	if e.YoutubeLink == "" || e.StreamyardID == "" {
 		s.logger.Error("Streaming svc not setup and youtube link not available. Cannot setup meetup")
 		return e
 	}
@@ -255,7 +255,7 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 	return e
 }
 
-func (s *EventStore) createOrUpdateStreamyard(e Event) Event {
+func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 	if !s.featureControl.StreamyardSync {
 		s.logger.Warning("Streamyard sync is disabled")
 		return e
@@ -271,7 +271,7 @@ func (s *EventStore) createOrUpdateStreamyard(e Event) Event {
 		return e
 	}
 
-	if e.YoutubeLink != "" && e.StreamyardLink == "" {
+	if e.YoutubeLink != "" && e.StreamyardID == "" {
 		s.logger.Error("Youtube link already available although streamyard link is still not available")
 		return e
 	}
@@ -281,7 +281,7 @@ func (s *EventStore) createOrUpdateStreamyard(e Event) Event {
 		return e
 	}
 
-	if e.StreamyardLink == "" {
+	if e.StreamyardID == "" {
 		s.logger.Info("No streamyard link available. Begin to create streamyard link")
 		streamCreateResp, err := s.streamyardSvc.CreateStream(context.TODO(), e.Title)
 		if err != nil {
@@ -294,14 +294,32 @@ func (s *EventStore) createOrUpdateStreamyard(e Event) Event {
 			s.logger.Error("Unable to create the output on streamyard. Err: %v", err)
 			return e
 		}
-		e.StreamyardLink = fmt.Sprintf("https://streamyard.com/%v", streamDestResp.ID)
+		e.StreamyardID = streamDestResp.ID
 		for _, dest := range streamDestResp.Destinations {
 			if dest.Type == "youtube" {
 				e.YoutubeLink = dest.Link
 			}
 		}
+		s.logger.Info("Create of streamyard youtube stream complete")
 		return e
 	}
+
+	streamyardStream, err := s.streamyardSvc.GetStream(context.TODO(), e.StreamyardID)
+	if err != nil {
+		s.logger.Errorf("Unable to retrieve stream from streamyard. %v", err)
+		return e
+	}
+
+	s.logger.Info("Change detected:\n  DescriptionChange: %v\n  TitleChange: %v\n  ImageChange: %v", streamyardStream.Description != e.Description, streamyardStream.Name != e.Title, e.UpdateImageOnPlatforms)
+	if streamyardStream.Description != e.Description || streamyardStream.Name != e.Title || e.UpdateImageOnPlatforms {
+		s.logger.Info("Begin update of streamyard")
+		streamyardStream.Description = e.Description
+		streamyardStream.Name = e.Title
+		streamyardStream.ImagePath = e.FeaturedImagePath
+		s.streamyardSvc.UpdateDestination(context.TODO(), "youtube", streamyardStream, e.UpdateImageOnPlatforms)
+		s.logger.Info("End update of streamyard")
+	}
+
 	return e
 }
 
@@ -321,7 +339,7 @@ func (s *EventStore) createOrUpdateCalendar(e Event) Event {
 		return e
 	}
 
-	if e.StreamyardLink == "" || e.YoutubeLink == "" {
+	if e.StreamyardID == "" || e.YoutubeLink == "" {
 		s.logger.Warning("Streamyard link and youtube link missing. Due to this, we can't aren't able to set the right calendar invite description")
 		return e
 	}
@@ -346,7 +364,7 @@ func (s *EventStore) createOrUpdateCalendar(e Event) Event {
 			StartTime:   e.StartDate,
 			EndTime:     e.StartDate.Add(time.Duration(e.Duration) * time.Minute),
 			Title:       e.Title,
-			Description: fmt.Sprintf(s.calendarEventInvite, e.StreamyardLink),
+			Description: fmt.Sprintf(s.calendarEventInvite, fmt.Sprintf("https://streamyard.com/%v", e.StreamyardID)),
 			Attendees:   yy,
 		})
 		if err != nil {
