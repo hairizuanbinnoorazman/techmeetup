@@ -26,20 +26,21 @@ type Meetup struct {
 }
 
 type MeetupEventResp struct {
-	Created       int64  `json:"created"`
-	Description   string `json:"description"`
-	Duration      int64  `json:"duration"`
-	ID            string `json:"id"`
-	IsOnlineEvent bool   `json:"is_online_event"`
-	Link          string `json:"link"`
-	Name          string `json:"name"`
-	Status        string `json:"status"`
-	Time          int64  `json:"time"`
-	HowToFindUs   string `json:"how_to_find_us"`
+	Created       int64             `json:"created"`
+	Description   string            `json:"description"`
+	Duration      int64             `json:"duration"`
+	ID            string            `json:"id"`
+	IsOnlineEvent bool              `json:"is_online_event"`
+	Link          string            `json:"link"`
+	Name          string            `json:"name"`
+	Status        string            `json:"status"`
+	Time          int64             `json:"time"`
+	HowToFindUs   string            `json:"how_to_find_us"`
+	EventHosts    []MeetupEventHost `json:"event_hosts"`
 }
 
 type MeetupEventHost struct {
-	ID       string `json:"id"`
+	ID       int    `json:"id"`
 	Intro    string `json:"intro"`
 	JoinDate int64  `json:"join_date"`
 	Name     string `json:"name"`
@@ -100,14 +101,18 @@ func (m *Meetup) ListPastEvents(ctx context.Context) ([]Event, error) {
 }
 
 func (m *Meetup) GetEvent(ctx context.Context, id string) (Event, error) {
-	url := fmt.Sprintf("https://api.meetup.com/%v/events/%v", m.meetupGroup, id)
+	url := fmt.Sprintf("https://api.meetup.com/%v/events/%v?fields=event_hosts", m.meetupGroup, id)
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %v", m.accessToken))
 	resp, err := m.client.Do(req)
 	if err != nil {
 		return Event{}, fmt.Errorf("Unable to fetch event. Err: %v", err)
 	}
 	raw, _ := ioutil.ReadAll(resp.Body)
-	// m.logger.Info(string(raw))
+	if resp.StatusCode != http.StatusOK {
+		return Event{}, fmt.Errorf("Unable to fetch event. Response is not ok.\nStatusCode: %v\nBody: %v", resp.StatusCode, string(raw))
+	}
+	// m.logger.Infof("Value from resp: %v", string(raw))
 	var meetupResp MeetupEventResp
 	err = json.Unmarshal(raw, &meetupResp)
 	if err != nil {
@@ -115,6 +120,10 @@ func (m *Meetup) GetEvent(ctx context.Context, id string) (Event, error) {
 	}
 	unixStartTime := meetupResp.Time / 1000
 	startTime := time.Unix(unixStartTime, 0)
+	organizers := []string{}
+	for _, org := range meetupResp.EventHosts {
+		organizers = append(organizers, strconv.Itoa(org.ID))
+	}
 	return Event{
 		ID:          meetupResp.ID,
 		StartTime:   startTime,
@@ -122,6 +131,7 @@ func (m *Meetup) GetEvent(ctx context.Context, id string) (Event, error) {
 		Description: meetupResp.Description,
 		IsWebinar:   meetupResp.IsOnlineEvent,
 		WebinarLink: meetupResp.HowToFindUs,
+		Organizers:  organizers,
 		Duration:    int(meetupResp.Duration / (1000 * 60)),
 	}, nil
 }
