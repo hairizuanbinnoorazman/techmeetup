@@ -270,7 +270,7 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 Description: %v
 Title: %v
 UpdateImageOnPlatforms: %v
-`, meetupEvent.Description != parsedDesc, meetupEvent.Name != e.Title, !e.UpdateImageOnPlatforms)
+`, meetupEvent.Description != parsedDesc, meetupEvent.Name != e.Title, e.UpdateImageOnPlatforms)
 	if (meetupEvent.Description != parsedDesc || meetupEvent.Name != e.Title) && !e.UpdateImageOnPlatforms {
 		s.logger.Info("Begin update of meetup - no image update needed")
 		meetupEvent.Description = e.Description
