@@ -266,12 +266,21 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 		return e
 	}
 	parsedDesc := eventmgmt.ConvertDescriptionToMeetupHTML(e.Description)
+	s.logger.Infof(`Change Detection:
+Description: %v
+Title: %v
+UpdateImageOnPlatforms: %v
+`, meetupEvent.Description != parsedDesc, meetupEvent.Name != e.Title, !e.UpdateImageOnPlatforms)
 	if (meetupEvent.Description != parsedDesc || meetupEvent.Name != e.Title) && !e.UpdateImageOnPlatforms {
 		s.logger.Info("Begin update of meetup - no image update needed")
 		meetupEvent.Description = e.Description
 		meetupEvent.Name = e.Title
 		meetupEvent.StartTime = e.StartDate
-		s.meetupClient.UpdateEvent(context.TODO(), meetupEvent)
+		_, err = s.meetupClient.UpdateEvent(context.TODO(), meetupEvent)
+		if err != nil {
+			s.logger.Errorf("Do check functionality to make sure all is working as expected. Err: %v", err)
+			return e
+		}
 		s.logger.Info("End update of meetup - no image update needed")
 		return e
 	}
@@ -290,7 +299,6 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 			s.logger.Errorf("Unable to update event with featured photo")
 			return e
 		}
-		e.UpdateImageOnPlatforms = false
 		s.logger.Info("End update of meetup - with image update needed")
 	}
 
@@ -355,7 +363,7 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 		return e
 	}
 
-	s.logger.Info("Change detected:\n  DescriptionChange: %v\n  TitleChange: %v\n  ImageChange: %v", streamyardStream.Description != e.Description, streamyardStream.Name != e.Title, e.UpdateImageOnPlatforms)
+	s.logger.Infof("Change Detection:\n  DescriptionChange: %v\n  TitleChange: %v\n  ImageChange: %v", streamyardStream.Description != e.Description, streamyardStream.Name != e.Title, e.UpdateImageOnPlatforms)
 	if streamyardStream.Description != e.Description || streamyardStream.Name != e.Title || e.UpdateImageOnPlatforms {
 		s.logger.Info("Begin update of streamyard")
 		streamyardStream.Description = e.Description
