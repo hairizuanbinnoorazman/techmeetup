@@ -270,6 +270,7 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 		s.logger.Info("Begin update of meetup - no image update needed")
 		meetupEvent.Description = e.Description
 		meetupEvent.Name = e.Title
+		meetupEvent.StartTime = e.StartDate
 		s.meetupClient.UpdateEvent(context.TODO(), meetupEvent)
 		s.logger.Info("End update of meetup - no image update needed")
 		return e
