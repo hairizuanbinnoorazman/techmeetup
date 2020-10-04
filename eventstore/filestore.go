@@ -95,6 +95,7 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		Title                  string       `yaml:"title"`
 		Description            string       `yaml:"description"`
 		IsOnline               bool         `yaml:"is_online"`
+		IsPublic               bool         `yaml:"is_public"`
 		YoutubeLink            string       `yaml:"youtube_link"`
 		FacebookLink           string       `yaml:"facebook_link"`
 		StreamyardID           string       `yaml:"streamyard_id"`
@@ -123,6 +124,7 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	e.StartDate = startDate
 	e.Title = tmp.Title
 	e.Description = tmp.Description
+	e.IsPublic = tmp.IsPublic
 	e.IsOnline = tmp.IsOnline
 	e.YoutubeLink = tmp.YoutubeLink
 	e.FacebookLink = tmp.FacebookLink
