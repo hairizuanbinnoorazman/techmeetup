@@ -185,8 +185,8 @@ func (m *Meetup) CreateDraftEvent(ctx context.Context, e Event) (Event, error) {
 	data := url.Values{}
 
 	// Modify description
-	desc := e.Description + fmt.Sprintf("\n\nYou can watch the live video via the following link:\n%v", e.WebinarLink)
-	desc = ConvertDescriptionToMeetupHTML(desc)
+	desc := AppendYoutubeLinktoDesc(e.Description, e.WebinarLink)
+	// desc = ConvertDescriptionToMeetupHTML(desc)
 
 	data.Set("announce", "false")
 	data.Set("duration", strconv.Itoa(e.Duration*60*1000))
@@ -230,8 +230,8 @@ func (m *Meetup) UpdateEvent(ctx context.Context, e Event, f ...func(url.Values)
 	data := url.Values{}
 
 	// Modify description
-	desc := e.Description + fmt.Sprintf("\n\nYou can watch the live video via the following link:\n%v", e.WebinarLink)
-	desc = ConvertDescriptionToMeetupHTML(desc)
+	desc := AppendYoutubeLinktoDesc(e.Description, e.WebinarLink)
+	// desc = ConvertDescriptionToMeetupHTML(desc)
 
 	data.Set("announce", "false")
 	data.Set("duration", strconv.Itoa(e.Duration*60*1000))
