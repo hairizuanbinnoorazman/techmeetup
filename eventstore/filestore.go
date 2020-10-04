@@ -56,6 +56,7 @@ type Event struct {
 	Title                  string       `yaml:"title"`
 	Description            string       `yaml:"description"`
 	IsOnline               bool         `yaml:"is_online"`
+	IsPublic               bool         `yaml:"is_public"`
 	YoutubeLink            string       `yaml:"youtube_link"`
 	FacebookLink           string       `yaml:"facebook_link"`
 	StreamyardID           string       `yaml:"streamyard_id"`
@@ -238,6 +239,7 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 			Name:        e.Title,
 			Description: e.Description,
 			IsWebinar:   true,
+			IsPublic:    e.IsPublic,
 			WebinarLink: e.YoutubeLink,
 			Duration:    120,
 			Organizers:  meetupOrganizers,
@@ -276,6 +278,7 @@ UpdateImageOnPlatforms: %v
 		meetupEvent.Description = e.Description
 		meetupEvent.Name = e.Title
 		meetupEvent.StartTime = e.StartDate
+		meetupEvent.IsPublic = e.IsPublic
 		_, err = s.meetupClient.UpdateEvent(context.TODO(), meetupEvent)
 		if err != nil {
 			s.logger.Errorf("Do check functionality to make sure all is working as expected. Err: %v", err)
@@ -341,6 +344,7 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 		streamCreateResp.StartDate = e.StartDate
 		streamCreateResp.ImagePath = e.FeaturedImagePath
 		streamCreateResp.Description = e.Description
+		streamCreateResp.IsPublic = e.IsPublic
 		s.logger.Infof("Created streamyard: %+v", streamCreateResp)
 		streamDestResp, err := s.streamyardSvc.CreateDestination(context.TODO(), "youtube", streamCreateResp)
 		if err != nil {
@@ -370,6 +374,7 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 		streamyardStream.Name = e.Title
 		streamyardStream.ImagePath = e.FeaturedImagePath
 		streamyardStream.StartDate = e.StartDate
+		streamyardStream.IsPublic = e.IsPublic
 		s.streamyardSvc.UpdateDestination(context.TODO(), "youtube", streamyardStream, e.UpdateImageOnPlatforms)
 		s.logger.Info("End update of streamyard")
 	}
