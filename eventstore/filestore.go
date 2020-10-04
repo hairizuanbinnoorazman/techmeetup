@@ -265,13 +265,13 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 		s.logger.Errorf("Unable to retrieve event details from meetup. Err: %v MeetupID: %v", err, e.MeetupID)
 		return e
 	}
-	parsedDesc := eventmgmt.ConvertDescriptionToMeetupHTML(e.Description)
+	parsedDesc := eventmgmt.ConvertMeetupHTMLToText(meetupEvent.Description)
 	s.logger.Infof(`Change Detection:
 Description: %v
 Title: %v
 UpdateImageOnPlatforms: %v
-`, meetupEvent.Description != parsedDesc, meetupEvent.Name != e.Title, e.UpdateImageOnPlatforms)
-	if (meetupEvent.Description != parsedDesc || meetupEvent.Name != e.Title) && !e.UpdateImageOnPlatforms {
+`, eventmgmt.AppendYoutubeLinktoDesc(e.Description, e.YoutubeLink) != parsedDesc, meetupEvent.Name != e.Title, e.UpdateImageOnPlatforms)
+	if (eventmgmt.AppendYoutubeLinktoDesc(e.Description, e.YoutubeLink) != parsedDesc || meetupEvent.Name != e.Title) && !e.UpdateImageOnPlatforms {
 		s.logger.Info("Begin update of meetup - no image update needed")
 		meetupEvent.Description = e.Description
 		meetupEvent.Name = e.Title
