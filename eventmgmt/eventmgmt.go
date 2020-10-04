@@ -66,6 +66,6 @@ func ConvertMeetupHTMLToText(desc string) string {
 }
 
 func AppendYoutubeLinktoDesc(desc, link string) string {
-	desc = desc + fmt.Sprintf("\n\nYou can watch the live video via the following link:\n%v", link)
+	desc = desc + fmt.Sprintf("\nYou can watch the live video via the following link:\n%v", link)
 	return desc
 }
