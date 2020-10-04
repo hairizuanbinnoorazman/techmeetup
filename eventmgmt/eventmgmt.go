@@ -22,6 +22,7 @@ type Event struct {
 	Name        string
 	Description string
 	IsWebinar   bool
+	IsPublic    bool
 	WebinarLink string
 	// Meetup organizer
 	Organizers []string

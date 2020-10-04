@@ -192,7 +192,11 @@ func (m *Meetup) CreateDraftEvent(ctx context.Context, e Event) (Event, error) {
 	data.Set("duration", strconv.Itoa(e.Duration*60*1000))
 	data.Set("event_hosts", strings.Join(e.Organizers, ","))
 	data.Set("name", e.Name)
-	data.Set("publish_status", "draft")
+	if e.IsPublic {
+		data.Set("publish_status", "published")
+	} else {
+		data.Set("publish_status", "draft")
+	}
 	data.Set("time", strconv.Itoa(int(e.StartTime.Unix()*1000)))
 	data.Set("venue_id", "online")
 	data.Set("description", desc)
@@ -237,7 +241,11 @@ func (m *Meetup) UpdateEvent(ctx context.Context, e Event, f ...func(url.Values)
 	data.Set("duration", strconv.Itoa(e.Duration*60*1000))
 	data.Set("event_hosts", strings.Join(e.Organizers, ","))
 	data.Set("name", e.Name)
-	data.Set("publish_status", "draft")
+	if e.IsPublic {
+		data.Set("publish_status", "published")
+	} else {
+		data.Set("publish_status", "draft")
+	}
 	data.Set("time", strconv.Itoa(int(e.StartTime.Unix()*1000)))
 	data.Set("venue_id", "online")
 	data.Set("description", desc)
