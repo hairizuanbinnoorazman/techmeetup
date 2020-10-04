@@ -3,6 +3,7 @@ package eventmgmt
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -46,7 +47,25 @@ func NewEvent(name, description, startTime string) (Event, error) {
 
 func ConvertDescriptionToMeetupHTML(desc string) string {
 	re := regexp.MustCompile(`((http|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?)`)
-	output := re.ReplaceAllString(desc, "<a href=\"$1\">$1</a>")
+	output := re.ReplaceAllString(desc, "<a href=\"$1\" class=\"embedded\">$1</a>")
 	output = strings.ReplaceAll(output, "\n", "</br>")
+	output = "<p>" + output + "</p>"
 	return output
+}
+
+func ConvertMeetupHTMLToText(desc string) string {
+	desc = strings.ReplaceAll(desc, "</p> <p>", "\n\n")
+	desc = strings.ReplaceAll(desc, "<br/>", "\n")
+	desc = strings.ReplaceAll(desc, "<p>", "")
+	desc = strings.ReplaceAll(desc, "</p>", "")
+	desc = strings.ReplaceAll(desc, "</a>", "")
+	re := regexp.MustCompile(`<a.*">`)
+	desc = re.ReplaceAllString(desc, "")
+	desc = strings.Trim(desc, " ")
+	return desc
+}
+
+func AppendYoutubeLinktoDesc(desc, link string) string {
+	desc = desc + fmt.Sprintf("\n\nYou can watch the live video via the following link:\n%v", link)
+	return desc
 }
