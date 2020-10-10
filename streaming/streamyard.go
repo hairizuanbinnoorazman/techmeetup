@@ -113,7 +113,7 @@ func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, err
 	}
 	raw, err := ioutil.ReadAll(resp.Body)
 
-	// s.logger.Info(string(raw))
+	s.logger.Info(string(raw))
 
 	var aa StreamyardBroadcastResponse
 	err = json.Unmarshal(raw, &aa)
@@ -153,6 +153,50 @@ func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, err
 		IsPublic:     isPublic,
 		Destinations: ds,
 	}, nil
+}
+
+func (s Streamyard) UpdateStream(ctx context.Context, streamID, title string) error {
+	if streamID == "" || title == "" {
+		return fmt.Errorf("StreamID or title is missing. Please provide streamID value first")
+	}
+
+	err := s.jwtChecker()
+	if err != nil {
+		return fmt.Errorf("Error while checking jwt. Err: %v", err)
+	}
+
+	initialURL := fmt.Sprintf("https://streamyard.com/api/broadcasts/%v", streamID)
+	finalURL, _ := url.ParseRequestURI(initialURL)
+
+	cj := s.createCookiejar(finalURL)
+	s.client.Jar = cj
+
+	type createReq struct {
+		CSRFToken string `json:"csrfToken"`
+		Title     string `json:"title"`
+	}
+	createRequest := createReq{
+		CSRFToken: s.csrfToken,
+		Title:     title,
+	}
+	rawReq, _ := json.Marshal(createRequest)
+
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, finalURL.String(), bytes.NewBuffer(rawReq))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("origin", "https://streamyard.com")
+	req.Header.Add("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36")
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Err while doing request. Err: %v", err)
+	}
+	rawResp, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("Unable to extract out rawResp. Err: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Unexpected status error code. StatusCode: %v RawResp: %v", resp.StatusCode, string(rawResp))
+	}
+	return nil
 }
 
 func (s Streamyard) CreateStream(ctx context.Context, title string) (Stream, error) {
