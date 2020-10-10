@@ -378,6 +378,13 @@ func (s *EventStore) createOrUpdateYoutubeStreamyard(e Event) Event {
 		streamyardStream.StartDate = e.StartDate
 		streamyardStream.IsPublic = e.IsPublic
 		s.streamyardSvc.UpdateDestination(context.TODO(), "youtube", streamyardStream, e.UpdateImageOnPlatforms)
+
+		if streamyardStream.Name != e.Title {
+			err = s.streamyardSvc.UpdateStream(context.TODO(), e.StreamyardID, e.Title)
+			if err != nil {
+				s.logger.Errorf("Unable to update stream. Err: %v", err)
+			}
+		}
 		s.logger.Info("End update of streamyard")
 	}
 
