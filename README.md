@@ -22,6 +22,11 @@ go build -o techmeetup ./cmd
   - bitly link creation - connect to Googleslides and retrieve all http link looking things and grab it to a yaml/json file
   - Allow user to replace it in one swoop (User to pass in a yaml/json file that would alter the links accordingly)
 
+# Issue found
+
+- Streamyard title is not changed. Destination will change. So get requests will constantly fail. Unless we update the main title as well -> we would need a function to update stream as well on top of stream destinations
+- Calendar invite does not do the check and update cycle properly. It does first update and that's it
+
 # In progress features
 
 - Handle calendar invites -> Done, awaiting integration
