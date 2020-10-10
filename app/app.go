@@ -51,6 +51,12 @@ func (a *App) Initialize() {
 		a.eventMgmtTicker.Stop()
 	}
 	a.authRefresherTicker = time.NewTicker(60 * time.Second)
+	a.RerunAuth()
+}
+
+func (a *App) RerunAuth() {
+	a.config, _ = a.configStore.Get()
+	authstore := NewBasicAuthStore(a.config.Authstore)
 	a.googleAuth = GoogleAuthRefresher{
 		client:       http.DefaultClient,
 		logger:       a.logger,
@@ -116,7 +122,8 @@ func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
 			if err != nil {
 				a.logger.Errorf("Unable to refresh Meetup Access Tokens. Err: %v", err)
 			}
-			a.Initialize()
+			// Need to double check this - initialize may reset
+			a.RerunAuth()
 		}
 	}
 }
