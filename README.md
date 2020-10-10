@@ -21,6 +21,18 @@ go build -o techmeetup ./cmd
 - GDG Cloud Singapore Utility
   - bitly link creation - connect to Googleslides and retrieve all http link looking things and grab it to a yaml/json file
   - Allow user to replace it in one swoop (User to pass in a yaml/json file that would alter the links accordingly)
+- Handle calendar invites
+  - Read calendar invites for event
+  - Create calendar invites for events
+  - Update calendar invites for events
+- To update streamyard
+  - Read events from streamyard
+  - Create event in streamyard
+  - Update event in streamyard
+- To update meetup.com
+  - Read events from meetup.com
+  - Create events into meetup.com
+  - Update events into meetup.com
 
 # Issue found
 
@@ -29,18 +41,7 @@ go build -o techmeetup ./cmd
 
 # In progress features
 
-- Handle calendar invites -> Done, awaiting integration
-  - Read calendar invites for event
-  - Create calendar invites for events
-  - Update calendar invites for events
-- To update streamyard
-  - Read events from streamyard - Done, require integration
-  - Create event in streamyard
-  - Update event in streamyard
-- To update meetup.com - Done, awaiting integration
-  - Read events from meetup.com
-  - Create events into meetup.com
-  - Update events into meetup.com
+- Fixing issues found (see above section)
 
 # Planned Features
 
