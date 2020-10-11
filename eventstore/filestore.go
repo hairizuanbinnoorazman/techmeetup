@@ -91,6 +91,7 @@ func (e Event) Validate() error {
 func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type alias struct {
 		TrackEvent             bool         `yaml:"track_event"`
+		GenerateBannerImage    bool         `yaml:"generate_banner_image"`
 		UpdateImageOnPlatforms bool         `yaml:"update_image_on_platforms"`
 		FeaturedImagePath      string       `yaml:"featured_image_path"`
 		StartDate              string       `yaml:"start_date"`
@@ -121,6 +122,7 @@ func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	e.TrackEvent = tmp.TrackEvent
+	e.GenerateBannerImage = tmp.GenerateBannerImage
 	e.FeaturedImagePath = tmp.FeaturedImagePath
 	e.UpdateImageOnPlatforms = tmp.UpdateImageOnPlatforms
 	e.StartDate = startDate
