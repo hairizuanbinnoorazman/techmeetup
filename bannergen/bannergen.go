@@ -3,7 +3,6 @@ package bannergen
 import (
 	"context"
 	"io/ioutil"
-	"log"
 	"math"
 	"net/url"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func generate_banner(outputPath, seriesName, webinarTitle, webinarDate string) {
+func Generate_banner(outputPath, seriesName, webinarTitle, webinarDate string) error {
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -26,11 +25,12 @@ func generate_banner(outputPath, seriesName, webinarTitle, webinarDate string) {
 	bannerEndpoint.RawQuery = val.Encode()
 	var buf []byte
 	if err := chromedp.Run(ctx, elementScreenshot(bannerEndpoint.String(), `#banner`, &buf)); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := ioutil.WriteFile(outputPath, buf, 0644); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 // elementScreenshot takes a screenshot of a specific element.

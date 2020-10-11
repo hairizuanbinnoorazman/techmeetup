@@ -2,7 +2,7 @@ package bannergen
 
 import "testing"
 
-func Test_generate_banner(t *testing.T) {
+func Test_Generate_banner(t *testing.T) {
 	type args struct {
 		outputPath   string
 		seriesName   string
@@ -25,7 +25,7 @@ func Test_generate_banner(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			generate_banner(tt.args.outputPath, tt.args.seriesName, tt.args.webinarTitle, tt.args.webinarDate)
+			Generate_banner(tt.args.outputPath, tt.args.seriesName, tt.args.webinarTitle, tt.args.webinarDate)
 		})
 	}
 }
