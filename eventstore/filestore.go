@@ -15,13 +15,14 @@ import (
 )
 
 type SubMeetupFeatureControl struct {
-	DryRunMode         bool `yaml:"dryrun_mode"`
-	StreamyardSync     bool `yaml:"streamyard_sync"`
-	CalendarSync       bool `yaml:"calendar_sync"`
-	MeetupSync         bool `yaml:"meetup_sync"`
-	SlidesSync         bool `yaml:"slides_sync"`
-	SheetsReporterSync bool `yaml:"sheets_reporter_sync"`
-	PostYoutubeSync    bool `yaml:"post_youtube_sync"`
+	DryRunMode              bool `yaml:"dryrun_mode"`
+	StreamyardSync          bool `yaml:"streamyard_sync"`
+	CalendarSync            bool `yaml:"calendar_sync"`
+	MeetupSync              bool `yaml:"meetup_sync"`
+	SlidesSync              bool `yaml:"slides_sync"`
+	SheetsReporterSync      bool `yaml:"sheets_reporter_sync"`
+	PostYoutubeSync         bool `yaml:"post_youtube_sync"`
+	GenerateBannerImageSync bool `yaml:"generate_banner_image_sync"`
 }
 
 type EventStore struct {
@@ -50,6 +51,7 @@ func NewEventStore(l logger.Logger, eventMgmt eventmgmt.Meetup, calendarSvc cale
 
 type Event struct {
 	TrackEvent             bool         `yaml:"track_event"`
+	GenerateBannerImage    bool         `yaml:"generate_banner_image"`
 	UpdateImageOnPlatforms bool         `yaml:"update_image_on_platforms"`
 	FeaturedImagePath      string       `yaml:"featured_image_path"`
 	StartDate              time.Time    `yaml:"start_date"`
@@ -271,9 +273,9 @@ func (s *EventStore) createOrUpdateMeetup(e Event) Event {
 	}
 	parsedDesc := eventmgmt.ConvertMeetupHTMLToText(meetupEvent.Description)
 	s.logger.Infof(`Change Detection:
-Description: %v
-Title: %v
-UpdateImageOnPlatforms: %v
+  Description: %v
+  Title: %v
+  UpdateImageOnPlatforms: %v
 `, eventmgmt.AppendYoutubeLinktoDesc(e.Description, e.YoutubeLink) != parsedDesc, meetupEvent.Name != e.Title, e.UpdateImageOnPlatforms)
 	if (eventmgmt.AppendYoutubeLinktoDesc(e.Description, e.YoutubeLink) != parsedDesc || meetupEvent.Name != e.Title) && !e.UpdateImageOnPlatforms {
 		s.logger.Info("Begin update of meetup - no image update needed")
