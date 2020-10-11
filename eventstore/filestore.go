@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/hairizuanbinnoorazman/techmeetup/streaming"
 
+	"github.com/hairizuanbinnoorazman/techmeetup/bannergen"
 	"github.com/hairizuanbinnoorazman/techmeetup/calendar"
 	"github.com/hairizuanbinnoorazman/techmeetup/eventmgmt"
 	"github.com/hairizuanbinnoorazman/techmeetup/logger"
@@ -446,5 +448,53 @@ func (s *EventStore) createOrUpdateCalendar(e Event) Event {
 		e.CalendarEventID = resp.ID
 		return e
 	}
+	return e
+}
+
+func (s *EventStore) createWebinarBannerImage(e Event) Event {
+	if !s.featureControl.GenerateBannerImageSync {
+		s.logger.Warning("Generate Banner Image sync is disabled")
+		return e
+	}
+
+	if time.Now().After(e.StartDate) {
+		s.logger.Warning("Start Date Time is already past. We will no longer track this event for this Autogenerating banner image")
+		return e
+	}
+
+	if !e.IsOnline {
+		s.logger.Warning("Event is not online. We will skip this workflow for now")
+		return e
+	}
+
+	if !e.GenerateBannerImage {
+		s.logger.Warning("Generating Banner Image is disabled")
+		return e
+	}
+
+	if e.Title == "" || e.StartDate.IsZero() || e.Duration == 0 {
+		s.logger.Warning("Missing title or start date is zero")
+		return e
+	}
+
+	items := strings.Split(e.Title, "-")
+	if len(items) != 2 {
+		s.logger.Warning("Unable to split title to series name + title name. Title: %v", e.Title)
+		return e
+	}
+
+	endTime := e.StartDate.Add(time.Duration(e.Duration) * time.Minute)
+	seriesName := strings.Trim(items[0], " ")
+	webinarTitle := strings.Trim(items[1], " ")
+	formattedTime := fmt.Sprintf("%v to %v", e.StartDate.Format("2 January 2006 - 15:04pm"), endTime.Format("15:04pm"))
+	outputPath := time.Now().Format("20060102_1504") + ".png"
+
+	err := bannergen.Generate_banner(outputPath, seriesName, webinarTitle, formattedTime)
+	if err != nil {
+		s.logger.Errorf("Generating banner failed.\n  Err: %v\n  seriesName: %v\n  webinarTitle: %v\n  formattedTime: %v", err, seriesName, webinarTitle, formattedTime)
+		return e
+	}
+
+	e.FeaturedImagePath = outputPath
 	return e
 }
