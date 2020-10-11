@@ -36,8 +36,8 @@ go build -o techmeetup ./cmd
 
 # Issue found
 
-- Streamyard title is not changed. Destination will change. So get requests will constantly fail. Unless we update the main title as well -> we would need a function to update stream as well on top of stream destinations
 - Calendar invite does not do the check and update cycle properly. It does first update and that's it
+- Need to manually create banner images - notice that banner image is still TBA even though title is already changed
 
 # In progress features
 
