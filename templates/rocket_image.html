@@ -1,0 +1,38 @@
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<style>
+    div.default_image {
+        width: 1280px;
+        height: 720px;
+        margin: auto;
+        background-size: cover;
+        background-image: url("/static/rocket_background.png");
+    }
+
+    div.space {
+        width: 1280px;
+        height: 400px;
+    }
+
+    h1.title {
+        margin-left: 160px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 60px;
+        margin-bottom: 20px;
+    }
+
+    h1.miao {
+        margin-left: 160px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 30px;
+    }
+</style>
+
+<body>
+    <div class="default_image">
+        <div class="space"></div>
+        <h1 class="title">Webinar #{{ .SeriesName }}</br>{{ .WebinarTitle }}</h1>
+        <h1 class="miao">{{ .WebinarDate }}</h1>
+    </div>
+</body>
