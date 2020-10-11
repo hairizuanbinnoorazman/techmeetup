@@ -41,6 +41,8 @@ func server(c Config, a AuthStore, notifyConfigChange chan bool) {
 		notifyConfigChange: notifyConfigChange,
 	}
 
+	http.Handle("/image", image{})
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./assets"))))
 	http.Handle("/auth/meetup/authorize", meetupAuthorize)
 	http.Handle("/auth/meetup/access", meetupAccess)
 	http.Handle("/auth/google/authorize", googleAuthorize)
