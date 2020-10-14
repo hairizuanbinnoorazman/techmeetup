@@ -92,7 +92,7 @@ func (s Streamyard) GetStream(ctx context.Context, streamID string) (Stream, err
 		return Stream{}, fmt.Errorf("StreamID is missing. Please provide streamID value first")
 	}
 
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -160,7 +160,7 @@ func (s Streamyard) UpdateStream(ctx context.Context, streamID, title string) er
 		return fmt.Errorf("StreamID or title is missing. Please provide streamID value first")
 	}
 
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -204,7 +204,7 @@ func (s Streamyard) CreateStream(ctx context.Context, title string) (Stream, err
 		return Stream{}, fmt.Errorf("No title provided to stream. Please relook at the inputs for this")
 	}
 
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -258,7 +258,7 @@ func (s Streamyard) CreateDestination(ctx context.Context, destinationStreamType
 		return Stream{}, fmt.Errorf("Empty inputs detected:\nstream: %v\ndestinationStreamType: %v", ss, destinationStreamType)
 	}
 
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return ss, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -362,7 +362,7 @@ func (s Streamyard) UpdateDestination(ctx context.Context, destinationStreamType
 		}
 	}
 
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -452,7 +452,7 @@ type StreamyardDestination struct {
 }
 
 func (s Streamyard) GetDestinations(ctx context.Context) ([]StreamyardDestination, error) {
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return nil, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -479,7 +479,7 @@ func (s Streamyard) GetDestinations(ctx context.Context) ([]StreamyardDestinatio
 }
 
 func (s Streamyard) ListStreams(ctx context.Context) ([]Stream, error) {
-	err := s.jwtChecker()
+	err := JWTChecker(s.logger, s.jwt)
 	if err != nil {
 		return []Stream{}, fmt.Errorf("Error while checking jwt. Err: %v", err)
 	}
@@ -551,8 +551,8 @@ func (s *Streamyard) createCookiejar(reqUrl *url.URL) *cookiejar.Jar {
 	return cj
 }
 
-func (s *Streamyard) jwtChecker() error {
-	token, _, err := new(jwt.Parser).ParseUnverified(s.jwt, jwt.MapClaims{})
+func JWTChecker(logger logger.Logger, jwtToken string) error {
+	token, _, err := new(jwt.Parser).ParseUnverified(jwtToken, jwt.MapClaims{})
 	if err != nil {
 		return fmt.Errorf("Unable to parse jwt token provided")
 	}
@@ -562,12 +562,12 @@ func (s *Streamyard) jwtChecker() error {
 	}
 	value := claims["exp"]
 	tm := time.Unix(int64(value.(float64)), 0)
-	s.logger.Infof("Expiry date: %v", tm)
+	logger.Infof("Expiry date: %v", tm)
 	if time.Now().After(tm) {
 		return fmt.Errorf("JWT expired - don't proceed with request. It will fail")
 	}
 	if time.Now().Add(-72 * time.Hour).After(tm) {
-		s.logger.Warning("JWT is expiring soon - within 3 days. Please logout and login once more for streamyard")
+		logger.Warning("JWT is expiring soon - within 3 days. Please logout and login once more for streamyard")
 	}
 	return nil
 }

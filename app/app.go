@@ -122,6 +122,12 @@ func (a *App) Run(notifyConfigChange chan bool, interrupts chan os.Signal) {
 			if err != nil {
 				a.logger.Errorf("Unable to refresh Meetup Access Tokens. Err: %v", err)
 			}
+			// Doublecheck for streamyard jwt token expiration
+			err = streaming.JWTChecker(a.logger, a.config.Streamyard.JWT)
+			if err != nil {
+				a.logger.Errorf("Do check streamyard login creds to ensure no further issues with automation. Err: %v", err)
+			}
+
 			// Need to double check this - initialize may reset
 			a.RerunAuth()
 		}
