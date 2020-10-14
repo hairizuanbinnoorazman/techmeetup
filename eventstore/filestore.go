@@ -489,12 +489,28 @@ func (s *EventStore) createWebinarBannerImage(e Event) Event {
 	formattedTime := fmt.Sprintf("%v to %v", e.StartDate.Format("2 January 2006 - 15:04pm"), endTime.Format("15:04pm"))
 	outputPath := time.Now().Format("20060102_1504") + ".png"
 
-	err := bannergen.Generate_banner(outputPath, seriesName, webinarTitle, formattedTime)
-	if err != nil {
-		s.logger.Errorf("Generating banner failed.\n  Err: %v\n  seriesName: %v\n  webinarTitle: %v\n  formattedTime: %v", err, seriesName, webinarTitle, formattedTime)
-		return e
+	var streamData streaming.Stream
+	var err error
+	if e.StreamyardID != "" {
+		streamData, err = s.streamyardSvc.GetStream(context.TODO(), e.StreamyardID)
+		if err != nil {
+			s.logger.Errorf("Unable to receive stream. Err: %v", err)
+			return e
+		}
+	}
+
+	// Handle the following case:
+	// When streamyardID is not defined - new event being created
+	// When title on streamyard is not the same as the one being identified as the one we have
+	if streamData.Name != e.Title || e.StreamyardID == "" {
+		err = bannergen.Generate_banner(outputPath, seriesName, webinarTitle, formattedTime)
+		if err != nil {
+			s.logger.Errorf("Generating banner failed.\n  Err: %v\n  seriesName: %v\n  webinarTitle: %v\n  formattedTime: %v", err, seriesName, webinarTitle, formattedTime)
+			return e
+		}
 	}
 
 	e.FeaturedImagePath = outputPath
+	e.UpdateImageOnPlatforms = true
 	return e
 }
